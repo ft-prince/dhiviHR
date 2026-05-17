@@ -1,0 +1,21 @@
+import { startAssessmentAction } from "@/lib/assessment/actions";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/marketing/site-header";
+
+export default function AssessmentLandingPage() {
+  return (
+    <>
+      <SiteHeader />
+      <main className="container-narrow py-16">
+        <h1 className="display-headline text-4xl">Interview Readiness Assessment</h1>
+        <p className="mt-3 text-ink-muted max-w-2xl">
+          25 situational questions across 5 competencies. Takes about 12 minutes. Your answers are saved
+          on every submit — you can resume any time.
+        </p>
+        <form action={startAssessmentAction} className="mt-8">
+          <Button type="submit" size="lg">Start Assessment</Button>
+        </form>
+      </main>
+    </>
+  );
+}
