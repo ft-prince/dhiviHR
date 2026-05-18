@@ -33,7 +33,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={{ name: session.user.name, role: (session.user as { role?: string }).role }} />
       <main className="container-narrow py-12">
         <div className="flex items-center justify-between">
           <div>

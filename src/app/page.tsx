@@ -6,6 +6,7 @@ import { Cloverleaf } from "@/components/marketing/cloverleaf";
 import { READINESS_BANDS } from "@/lib/utils";
 import { COMPETENCY_LABELS, COMPETENCIES } from "@/lib/scoring";
 import { ArrowRight, CheckCircle2, GraduationCap, Building2 } from "lucide-react";
+import { auth } from "@/lib/auth";
 
 const PROCESS_STEPS = [
   { title: "Training Needs Diagnosis", desc: "Identification of high-impact development areas" },
@@ -23,10 +24,12 @@ const APPROACH_BENEFITS = [
   "Scalable people capability systems",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+  const user = session?.user ? { name: session.user.name, role: (session.user as { role?: string }).role } : null;
   return (
     <main className="min-h-screen bg-white">
-      <SiteHeader />
+      <SiteHeader user={user} />
 
       {/* Decorative top blob */}
       <div className="pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 h-32 w-[420px] rounded-b-[120px] bg-brand-500/90" aria-hidden />

@@ -24,7 +24,7 @@ export default async function AssessmentRunPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={{ name: session.user.name, role: (session.user as { role?: string }).role }} />
       <main className="container-narrow py-10">
         <AssessmentRunner
           assessmentId={id}

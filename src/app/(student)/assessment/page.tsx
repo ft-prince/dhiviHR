@@ -1,11 +1,14 @@
 import { startAssessmentAction } from "@/lib/assessment/actions";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { auth } from "@/lib/auth";
 
-export default function AssessmentLandingPage() {
+export default async function AssessmentLandingPage() {
+  const session = await auth();
+  const user = session?.user ? { name: session.user.name, role: (session.user as { role?: string }).role } : null;
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={user} />
       <main className="container-narrow py-16">
         <h1 className="display-headline text-4xl">Interview Readiness Assessment</h1>
         <p className="mt-3 text-ink-muted max-w-2xl">

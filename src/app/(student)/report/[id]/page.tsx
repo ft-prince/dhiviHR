@@ -39,7 +39,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={{ name: session.user.name, role: (session.user as { role?: string }).role }} />
       <main className="container-narrow py-12">
         <div className="flex items-center justify-between">
           <h1 className="display-headline text-4xl">Your Readiness Report</h1>

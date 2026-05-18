@@ -13,8 +13,21 @@ const LINKS = [
   { href: "#colleges", label: "For Colleges" },
 ];
 
-export function SiteHeader() {
+function dashboardHref(role?: string) {
+  if (role === "super_admin") return "/super";
+  if (role === "client_admin") return "/admin";
+  return "/dashboard";
+}
+
+interface SiteHeaderProps {
+  user?: { name?: string | null; role?: string } | null;
+}
+
+export function SiteHeader({ user }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
+  const isLoggedIn = !!user;
+  const href = dashboardHref(user?.role);
+
   return (
     <header className="border-b border-border bg-white/85 backdrop-blur sticky top-0 z-40">
       <div className="container-narrow flex h-16 items-center justify-between gap-3">
@@ -29,8 +42,16 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/login"><Button variant="ghost" size="sm">Login</Button></Link>
-          <Link href="/signup"><Button size="sm">Start Now</Button></Link>
+          {isLoggedIn ? (
+            <Link href={href}>
+              <Button size="sm">Dashboard</Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login"><Button variant="ghost" size="sm">Login</Button></Link>
+              <Link href="/signup"><Button size="sm">Start Now</Button></Link>
+            </>
+          )}
         </div>
         <button
           onClick={() => setOpen((v) => !v)}
@@ -49,12 +70,20 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="flex gap-2 pt-2">
-              <Link href="/login" className="flex-1" onClick={() => setOpen(false)}>
-                <Button variant="outline" className="w-full">Login</Button>
-              </Link>
-              <Link href="/signup" className="flex-1" onClick={() => setOpen(false)}>
-                <Button className="w-full">Start Now</Button>
-              </Link>
+              {isLoggedIn ? (
+                <Link href={href} className="flex-1" onClick={() => setOpen(false)}>
+                  <Button className="w-full">Dashboard</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="flex-1" onClick={() => setOpen(false)}>
+                    <Button variant="outline" className="w-full">Login</Button>
+                  </Link>
+                  <Link href="/signup" className="flex-1" onClick={() => setOpen(false)}>
+                    <Button className="w-full">Start Now</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
