@@ -4,7 +4,7 @@ import { KpiCard } from "@/components/admin/kpi-card";
 import { DataTable } from "@/components/admin/data-table";
 import { getPlatformStats, getRecentAttempts, getRecentSignups, getLevelDistribution } from "@/lib/admin/stats";
 import { Users, BookOpenCheck, IndianRupee, GraduationCap, TrendingUp } from "lucide-react";
-import { READINESS_BANDS } from "@/lib/utils";
+import { READINESS_BANDS, fmtDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +83,7 @@ export default async function AdminOverviewPage() {
               )},
               { key: "score", header: "Score", render: (r) => r.total ?? "—" },
               { key: "level", header: "Level", render: (r) => r.level ? READINESS_BANDS.find((b) => b.level === r.level)?.label : "—" },
-              { key: "when", header: "When", render: (r) => new Date(r.startedAt).toLocaleDateString() },
+              { key: "when", header: "When", render: (r) => fmtDate(r.startedAt) },
             ]}
           />
         </div>
@@ -96,7 +96,7 @@ export default async function AdminOverviewPage() {
               { key: "name", header: "Name", render: (r) => <span className="font-medium text-ink">{r.name ?? "—"}</span> },
               { key: "email", header: "Email", render: (r) => <span className="text-ink-soft">{r.email}</span> },
               { key: "role", header: "Role", render: (r) => <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-bold">{r.role.replace("_", " ")}</span> },
-              { key: "joined", header: "Joined", render: (r) => new Date(r.createdAt).toLocaleDateString() },
+              { key: "joined", header: "Joined", render: (r) => fmtDate(r.createdAt) },
             ]}
           />
         </div>

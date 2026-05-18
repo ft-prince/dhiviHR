@@ -5,6 +5,24 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Server/client-safe date formatter — fixed locale + UTC so hydration never mismatches. */
+export function fmtDate(d: Date | string): string {
+  return new Date(d).toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function fmtTime(d: Date | string): string {
+  return new Date(d).toLocaleTimeString("en-GB", {
+    timeZone: "UTC",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export const READINESS_BANDS = [
   { min: 0, max: 35, level: "emerging", label: "Emerging Talent", track: "Foundation Employability Track" },
   { min: 36, max: 60, level: "developing", label: "Developing Professional", track: "Communication & Interview Track" },

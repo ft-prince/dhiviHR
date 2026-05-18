@@ -39,6 +39,7 @@ export const readinessLevel = pgEnum("readiness_level", [
   "high_impact",
 ]);
 
+// Kept for DB enum compatibility; new code uses the competencies table instead.
 export const competencyEnum = pgEnum("competency", [
   "communication_confidence",
   "problem_solving",
@@ -46,6 +47,18 @@ export const competencyEnum = pgEnum("competency", [
   "initiative_growth",
   "interview_readiness",
 ]);
+
+export const competencies = pgTable("competencies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
+  description: text("description"),
+  weight: integer("weight").notNull().default(20),
+  active: boolean("active").notNull().default(true),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -99,6 +112,30 @@ export const verificationTokens = pgTable(
   (t) => ({ pk: primaryKey({ columns: [t.identifier, t.token] }) }),
 );
 
+export const formTemplates = pgTable("form_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").notNull().default(false),
+  /** Array of TemplateRule — see lib/types/rules.ts */
+  rules: jsonb("rules").notNull().default([]),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const templateQuestions = pgTable(
+  "template_questions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    templateId: uuid("template_id").notNull().references(() => formTemplates.id, { onDelete: "cascade" }),
+    questionId: uuid("question_id").notNull().references(() => questions.id, { onDelete: "cascade" }),
+    orderIndex: integer("order_index").notNull().default(0),
+    active: boolean("active").notNull().default(true),
+  },
+  (t) => ({ uniq: uniqueIndex("template_questions_uniq").on(t.templateId, t.questionId) }),
+);
+
 export const colleges = pgTable("colleges", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -106,7 +143,9 @@ export const colleges = pgTable("colleges", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   notes: text("notes"),
+  templateId: uuid("template_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const accessCodeBatches = pgTable("access_code_batches", {
@@ -135,7 +174,7 @@ export const accessCodes = pgTable(
 
 export const questions = pgTable("questions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  competency: competencyEnum("competency").notNull(),
+  competency: text("competency").notNull(),
   prompt: text("prompt").notNull(),
   /** [{ id, label, weight }] weight 0..4 */
   options: jsonb("options").notNull(),
@@ -203,10 +242,21 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   college: one(colleges, { fields: [users.collegeId], references: [colleges.id] }),
 }));
 
-export const collegesRelations = relations(colleges, ({ many }) => ({
+export const collegesRelations = relations(colleges, ({ many, one }) => ({
   batches: many(accessCodeBatches),
   codes: many(accessCodes),
   students: many(users),
+  template: one(formTemplates, { fields: [colleges.templateId], references: [formTemplates.id] }),
+}));
+
+export const formTemplatesRelations = relations(formTemplates, ({ many }) => ({
+  templateQuestions: many(templateQuestions),
+  colleges: many(colleges),
+}));
+
+export const templateQuestionsRelations = relations(templateQuestions, ({ one }) => ({
+  template: one(formTemplates, { fields: [templateQuestions.templateId], references: [formTemplates.id] }),
+  question: one(questions, { fields: [templateQuestions.questionId], references: [questions.id] }),
 }));
 
 export const assessmentsRelations = relations(assessments, ({ one, many }) => ({

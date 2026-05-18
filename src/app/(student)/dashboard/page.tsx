@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { assessments, scores } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
-import { READINESS_BANDS } from "@/lib/utils";
+import { READINESS_BANDS, fmtDate } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
 
 export default async function DashboardPage() {
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
                 )}
                 {attempts.map((a) => (
                   <tr key={a.id} className="border-t border-border">
-                    <td className="px-4 py-3">{new Date(a.startedAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">{fmtDate(a.startedAt)}</td>
                     <td className="px-4 py-3 capitalize">{a.status.replace("_", " ")}</td>
                     <td className="px-4 py-3">{a.total ?? "—"}</td>
                     <td className="px-4 py-3">{a.level ? READINESS_BANDS.find((b) => b.level === a.level)?.label : "—"}</td>

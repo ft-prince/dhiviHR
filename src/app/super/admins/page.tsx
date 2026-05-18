@@ -1,4 +1,5 @@
 import { desc, inArray } from "drizzle-orm";
+import { fmtDate } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
@@ -34,7 +35,7 @@ export default async function SuperAdminsPage() {
             </div>
           )},
           { key: "role", header: "Role", render: (r) => <RoleSelect userId={r.id} role={r.role} /> },
-          { key: "since", header: "Since", render: (r) => new Date(r.createdAt).toLocaleDateString() },
+          { key: "since", header: "Since", render: (r) => fmtDate(r.createdAt) },
         ]}
       />
     </>

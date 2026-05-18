@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Menu, X, LogOut,
   LayoutDashboard, IndianRupee, Activity, ShieldCheck,
-  Server, BarChart3, Users, Building2, Ticket, ListChecks,
+  Server, BarChart3, Users, Building2, Ticket, ListChecks, FileText, Layers,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,8 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/colleges",  label: "Colleges",   icon: Building2       },
   { href: "/admin/codes",     label: "Codes",      icon: Ticket          },
   { href: "/admin/questions", label: "Questions",  icon: ListChecks      },
+  { href: "/admin/competencies", label: "Competencies", icon: Layers     },
+  { href: "/admin/templates",    label: "Templates",    icon: FileText    },
   { href: "/admin/activity",  label: "Activity",   icon: BarChart3       },
 ];
 

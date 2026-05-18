@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { getPlatformStats, getRevenueByDay, getRecentSignups } from "@/lib/admin/stats";
@@ -61,7 +62,7 @@ export default async function SuperOverviewPage() {
             { key: "role", header: "Role", render: (r) => (
               <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-bold">{r.role.replace("_", " ")}</span>
             )},
-            { key: "joined", header: "Joined", render: (r) => new Date(r.createdAt).toLocaleDateString() },
+            { key: "joined", header: "Joined", render: (r) => fmtDate(r.createdAt) },
           ]}
         />
       </section>

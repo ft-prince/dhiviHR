@@ -3,23 +3,29 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { toggleQuestionActiveAction } from "@/lib/admin/actions";
-
+import { QuestionForm } from "@/components/admin/question-form";
+import { DeleteButton } from "@/components/admin/delete-button";
+import { toggleQuestionActiveAction, deleteQuestionAction } from "@/lib/admin/actions";
 export function QuestionRow({
   id,
   prompt,
   active,
   orderIndex,
+  competency,
   options,
+  competencies,
 }: {
   id: string;
   prompt: string;
   active: boolean;
   orderIndex: number;
+  competency: string;
   options: { id: string; label: string; weight: number }[];
+  competencies?: { slug: string; label: string }[];
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [pending, start] = useTransition();
 
   function toggle() {
@@ -33,7 +39,7 @@ export function QuestionRow({
     <div className="rounded-2xl border border-border bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs text-ink-soft">
+          <div className="flex items-center gap-2 text-xs text-ink-soft flex-wrap">
             <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-bold">#{orderIndex || "—"}</span>
             <span className={`rounded-full px-2 py-0.5 font-bold ${active ? "bg-brand-500 text-white" : "bg-ink-soft/20 text-ink-soft"}`}>
               {active ? "Active" : "Inactive"}
@@ -41,16 +47,24 @@ export function QuestionRow({
           </div>
           <div className="mt-2 font-medium text-ink">{prompt}</div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? "Hide" : "Options"}
+        <div className="flex shrink-0 gap-1 flex-wrap justify-end">
+          <Button size="sm" variant="ghost" onClick={() => { setExpanded((v) => !v); setEditing(false); }}>
+            {expanded && !editing ? "Hide" : "Options"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => { setEditing((v) => !v); setExpanded(false); }}>
+            {editing ? "Cancel" : "Edit"}
           </Button>
           <Button size="sm" variant={active ? "outline" : "default"} onClick={toggle} disabled={pending}>
             {pending ? "…" : active ? "Disable" : "Enable"}
           </Button>
+          <DeleteButton
+            label="Delete"
+            onDelete={() => deleteQuestionAction(id)}
+          />
         </div>
       </div>
-      {expanded && (
+
+      {expanded && !editing && (
         <div className="mt-4 grid sm:grid-cols-2 gap-2">
           {options.map((o) => (
             <div key={o.id} className="rounded-lg border border-border bg-brand-50/40 px-3 py-2 text-sm flex justify-between">
@@ -58,6 +72,16 @@ export function QuestionRow({
               <span className="text-brand-700 font-bold">{o.weight}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {editing && (
+        <div className="mt-4 border-t border-border pt-4">
+          <QuestionForm
+            initial={{ id, competency, prompt, options, orderIndex, active }}
+            competencies={competencies}
+            onDone={() => { setEditing(false); router.refresh(); }}
+          />
         </div>
       )}
     </div>
