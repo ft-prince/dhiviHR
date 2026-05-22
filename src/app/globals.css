@@ -5,6 +5,8 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground font-sans;
@@ -18,11 +20,79 @@
   .container-narrow {
     @apply mx-auto w-full max-w-6xl px-6;
   }
+
   .display-headline {
     @apply font-display font-extrabold uppercase tracking-tight text-ink;
     text-shadow: 1px 1px 0 rgba(15, 23, 42, 0.06);
   }
+
   .pill-cta {
-    @apply inline-flex items-center gap-2 rounded-pill bg-brand-500 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-white shadow-glow transition hover:bg-brand-600;
+    @apply inline-flex items-center gap-2 rounded-pill bg-brand-500 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-white shadow-glow transition-all duration-200;
   }
+  .pill-cta:hover {
+    @apply bg-brand-600;
+    box-shadow: 0 10px 36px -10px rgba(34, 197, 94, 0.65);
+  }
+  .pill-cta:active {
+    transform: scale(0.98);
+  }
+
+  /* ── Background patterns ─────────────────────────────────── */
+
+  /* Fine line grid for dark hero */
+  .hero-line-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Subtle dot pattern for light sections */
+  .dot-grid {
+    background-image: radial-gradient(circle, rgba(34, 197, 94, 0.12) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Grid on green CTA section */
+  .cta-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
+/* ── Custom animations ───────────────────────────────────────── */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.4); }
+}
+
+@keyframes draw-line {
+  from { stroke-dashoffset: var(--line-length, 200); }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+.animate-draw-line {
+  animation: draw-line 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
