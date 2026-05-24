@@ -70,7 +70,6 @@ function InTemplateCard({
   const router = useRouter();
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [removePending, startRemove] = useTransition();
-  const [deletePending, startDelete] = useTransition();
 
   function handleRemove() {
     startRemove(async () => {
@@ -123,7 +122,7 @@ function InTemplateCard({
         </div>
       </div>
 
-      {/* Inline edit form — forks the question so other templates are not affected */}
+      {/* Inline edit form */}
       {mode === "edit" && (
         <div className="border-t border-border px-4 pb-4 pt-3 bg-brand-50/30">
           <p className="text-xs text-amber-600 mb-3">
@@ -148,9 +147,17 @@ function InTemplateCard({
   );
 }
 
-// ── Create-new question form (adds to template on save) ──────────────────────
+// ── Create-new question form ──────────────────────────────────────────────────
 
-function NewQuestionPanel({ templateId, nextIndex, competencies }: { templateId: string; nextIndex: number; competencies: { slug: string; label: string }[] }) {
+function NewQuestionPanel({
+  templateId,
+  nextIndex,
+  competencies,
+}: {
+  templateId: string;
+  nextIndex: number;
+  competencies: { slug: string; label: string }[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -174,7 +181,7 @@ function NewQuestionPanel({ templateId, nextIndex, competencies }: { templateId:
   );
 }
 
-// ── Available question row (bank questions not yet in template) ──────────────
+// ── Available question row ────────────────────────────────────────────────────
 
 function AvailableRow({
   q,
@@ -212,7 +219,7 @@ function AvailableRow({
   );
 }
 
-// ── Root component ───────────────────────────────────────────────────────────
+// ── Root component ────────────────────────────────────────────────────────────
 
 export function TemplateDetailClient({
   template,
@@ -224,6 +231,7 @@ export function TemplateDetailClient({
   const router = useRouter();
   const [editingMeta, setEditingMeta] = useState(false);
   const [filter, setFilter] = useState("");
+  const [deletingTemplate, startDeleteTemplate] = useTransition();
 
   const competencies = Object.entries(competencyLabels).map(([slug, label]) => ({ slug, label }));
 
@@ -233,6 +241,13 @@ export function TemplateDetailClient({
       q.prompt.toLowerCase().includes(filter.toLowerCase()) ||
       q.competency.includes(filter.toLowerCase()),
   );
+
+  function handleDeleteTemplate() {
+    startDeleteTemplate(async () => {
+      await deleteTemplateAction(template.id);
+      router.push("/admin/templates");
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -256,11 +271,20 @@ export function TemplateDetailClient({
             <Button size="sm" variant="outline" onClick={() => setEditingMeta((v) => !v)}>
               {editingMeta ? "Cancel" : "Edit Template"}
             </Button>
-            <DeleteButton
-              label="Delete Template"
-              confirmText="Delete this template? Colleges using it will lose their template assignment."
-              onDelete={() => deleteTemplateAction(template.id)}
-            />
+            {/* Delete template — navigates back to listing after deletion */}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-600 hover:bg-red-50"
+              disabled={deletingTemplate}
+              onClick={() => {
+                if (confirm("Delete this template? Colleges using it will lose their template assignment.")) {
+                  handleDeleteTemplate();
+                }
+              }}
+            >
+              {deletingTemplate ? "Deleting…" : "Delete Template"}
+            </Button>
           </div>
         </div>
         {editingMeta && (
@@ -283,7 +307,6 @@ export function TemplateDetailClient({
             </h2>
           </div>
 
-          {/* Create new question inline */}
           <NewQuestionPanel templateId={template.id} nextIndex={inTemplate.length} competencies={competencies} />
 
           {inTemplate.length === 0 ? (

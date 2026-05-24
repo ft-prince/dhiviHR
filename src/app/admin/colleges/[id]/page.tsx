@@ -3,12 +3,29 @@ import { fmtDate } from "@/lib/utils";
 import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { colleges, users, accessCodeBatches, accessCodes, formTemplates } from "@/lib/db/schema";
+import { colleges, users, accessCodeBatches, formTemplates } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
 import { DataTable } from "@/components/admin/data-table";
 import { CollegeDetailClient } from "@/components/admin/college-detail-client";
 
 export const dynamic = "force-dynamic";
+
+type StudentRow = {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: Date;
+  assessmentCount: number;
+  latestScore: number | null;
+};
+
+type BatchRow = {
+  id: string;
+  label: string;
+  size: number;
+  createdAt: Date;
+  redeemed: number;
+};
 
 export default async function CollegeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,32 +48,57 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
 
   if (!college) notFound();
 
-  const [students, batches, templateList] = await Promise.all([
-    db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        createdAt: users.createdAt,
-        assessmentCount: sql<number>`(SELECT count(*)::int FROM assessments WHERE assessments.user_id = users.id)`,
-        latestScore: sql<number | null>`(SELECT sc.total FROM scores sc JOIN assessments a ON sc.assessment_id = a.id WHERE a.user_id = users.id ORDER BY a.started_at DESC LIMIT 1)`,
-      })
-      .from(users)
-      .where(eq(users.collegeId, id))
-      .orderBy(desc(users.createdAt)),
-    db
-      .select({
-        id: accessCodeBatches.id,
-        label: accessCodeBatches.label,
-        size: accessCodeBatches.size,
-        createdAt: accessCodeBatches.createdAt,
-        redeemed: sql<number>`(SELECT count(*)::int FROM ${accessCodes} WHERE ${accessCodes.batchId} = ${accessCodeBatches.id} AND redeemed_at IS NOT NULL)`,
-      })
-      .from(accessCodeBatches)
-      .where(eq(accessCodeBatches.collegeId, id))
-      .orderBy(desc(accessCodeBatches.createdAt)),
-    db.select({ id: formTemplates.id, name: formTemplates.name }).from(formTemplates).orderBy(formTemplates.name),
+  const [studentsResult, batchesResult, templateList] = await Promise.all([
+    // Raw SQL for students — correlated subqueries need raw to avoid Drizzle interpolation bug
+    db.execute(sql`
+      SELECT
+        u.id,
+        u.name,
+        u.email,
+        u.created_at                                          AS "createdAt",
+        (
+          SELECT COUNT(*)::int
+          FROM assessments
+          WHERE assessments.user_id = u.id
+        )                                                     AS "assessmentCount",
+        (
+          SELECT sc.total
+          FROM scores sc
+          JOIN assessments a ON sc.assessment_id = a.id
+          WHERE a.user_id = u.id
+          ORDER BY a.started_at DESC
+          LIMIT 1
+        )                                                     AS "latestScore"
+      FROM users u
+      WHERE u.college_id = ${id}
+      ORDER BY u.created_at DESC
+    `),
+
+    // Raw SQL for batches — same fix for redeemed count
+    db.execute(sql`
+      SELECT
+        b.id,
+        b.label,
+        b.size,
+        b.created_at  AS "createdAt",
+        (
+          SELECT COUNT(*)::int
+          FROM access_codes ac
+          WHERE ac.batch_id = b.id
+            AND ac.redeemed_at IS NOT NULL
+        )             AS "redeemed"
+      FROM access_code_batches b
+      WHERE b.college_id = ${id}
+      ORDER BY b.created_at DESC
+    `),
+
+    db.select({ id: formTemplates.id, name: formTemplates.name })
+      .from(formTemplates)
+      .orderBy(formTemplates.name),
   ]);
+
+  const students = studentsResult.rows as unknown as StudentRow[];
+  const batches  = batchesResult.rows  as unknown as BatchRow[];
 
   return (
     <>
@@ -65,7 +107,10 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
           ← Colleges
         </Link>
       </div>
-      <PageHeader title={college.name} description={`Slug: ${college.slug} · Added ${fmtDate(college.createdAt)}`} />
+      <PageHeader
+        title={college.name}
+        description={`Slug: ${college.slug} · Added ${fmtDate(college.createdAt)}`}
+      />
 
       <CollegeDetailClient college={college} templateList={templateList} />
 
@@ -90,11 +135,14 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
                   </div>
                 ),
               },
-              { key: "assessments", header: "Attempts", render: (r) => r.assessmentCount },
+              { key: "assessments", header: "Attempts",     render: (r) => r.assessmentCount },
               {
                 key: "score",
                 header: "Latest Score",
-                render: (r) => (r.latestScore != null ? <b className="text-brand-700">{r.latestScore}</b> : "—"),
+                render: (r) =>
+                  r.latestScore != null
+                    ? <b className="text-brand-700">{r.latestScore}</b>
+                    : "—",
               },
               { key: "joined", header: "Joined", render: (r) => fmtDate(r.createdAt) },
             ]}
@@ -111,7 +159,11 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
             rows={batches}
             emptyText="No batches yet."
             columns={[
-              { key: "label", header: "Label", render: (r) => <span className="font-medium text-ink">{r.label}</span> },
+              {
+                key: "label",
+                header: "Label",
+                render: (r) => <span className="font-medium text-ink">{r.label}</span>,
+              },
               {
                 key: "codes",
                 header: "Codes",
