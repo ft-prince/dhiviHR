@@ -57,7 +57,7 @@ export function Paywall({ assessmentId, userName, userEmail }: { assessmentId: s
   }
 
   return (
-    <div className="rounded-2xl border-2 border-brand-200 bg-white shadow-card p-10 text-center">
+    <div className="rounded-2xl border-2 border-brand-200 bg-white shadow-card p-6 sm:p-10 text-center">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="mx-auto h-14 w-14 rounded-full bg-brand-50 grid place-items-center text-brand-600">
         <Lock className="h-6 w-6" />

@@ -78,7 +78,7 @@ export default async function AdminTemplatesPage({
         description="Create and manage question templates. Assign templates to colleges so each cohort gets the right assessment."
       />
       <div className="grid lg:grid-cols-[1fr_380px] gap-6">
-        <div>
+        <div className="min-w-0">
           <TemplatesFilterBar filters={{ q }} />
           <DataTable
             rows={rows}

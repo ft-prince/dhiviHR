@@ -75,15 +75,25 @@ const FOOTER_LINKS = {
 interface BtnProps { label: string; dark?: boolean; green?: boolean; outline?: boolean; className?: string; onClick?: () => void; href?: string }
 
 function TextRollButton({ label, dark, green, outline, className = "", onClick, href }: BtnProps) {
+  // NOTE: Tailwind only generates classes from static literals, so runtime-
+  // interpolated `bg-[${GREEN}]` would never be emitted. The green variant
+  // therefore sets its colour via inline style instead of a dynamic class.
   const base = green
-    ? `bg-[${GREEN}] hover:bg-[${GREEN_DARK}] text-white`
+    ? "text-white"
     : dark
     ? "bg-gray-900 hover:bg-gray-800 text-white"
     : outline
     ? "bg-white border border-gray-200 text-gray-900 hover:border-gray-400"
     : "bg-gray-900 text-white";
   const arrowBg = green || dark ? "bg-white" : "bg-gray-900";
-  const arrowColor = green ? `text-[${GREEN}]` : dark ? "text-gray-900" : "text-white";
+  const arrowColor = green ? "" : dark ? "text-gray-900" : "text-white";
+  const greenStyle = green ? { background: GREEN } : undefined;
+  const onGreenEnter = green
+    ? (e: React.MouseEvent<HTMLElement>) => ((e.currentTarget as HTMLElement).style.background = GREEN_DARK)
+    : undefined;
+  const onGreenLeave = green
+    ? (e: React.MouseEvent<HTMLElement>) => ((e.currentTarget as HTMLElement).style.background = GREEN)
+    : undefined;
 
   const inner = (
     <>
@@ -94,15 +104,15 @@ function TextRollButton({ label, dark, green, outline, className = "", onClick, 
         </div>
       </div>
       <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${arrowBg}`} style={{ transition: "transform 500ms cubic-bezier(0.25,0.1,0.25,1)" }}>
-        <ArrowRight size={14} className={`${arrowColor} group-hover:-rotate-45`} style={{ transition: "transform 500ms cubic-bezier(0.25,0.1,0.25,1)" }} />
+        <ArrowRight size={14} className={`${arrowColor} group-hover:-rotate-45`} style={{ ...(green ? { color: GREEN } : {}), transition: "transform 500ms cubic-bezier(0.25,0.1,0.25,1)" }} />
       </div>
     </>
   );
 
   const cls = `group inline-flex items-center gap-2 rounded-full pl-5 pr-2 py-2 text-[13px] font-medium transition-colors ${base} ${className}`;
 
-  if (href) return <Link href={href} className={cls}>{inner}</Link>;
-  return <button onClick={onClick} className={cls}>{inner}</button>;
+  if (href) return <Link href={href} className={cls} style={greenStyle} onMouseEnter={onGreenEnter} onMouseLeave={onGreenLeave}>{inner}</Link>;
+  return <button onClick={onClick} className={cls} style={greenStyle} onMouseEnter={onGreenEnter} onMouseLeave={onGreenLeave}>{inner}</button>;
 }
 
 /* ─── SVGs ────────────────────────────────────────────────────────── */
@@ -247,9 +257,7 @@ export function LandingPage({ user }: LandingPageProps) {
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="absolute inset-0 bg-black/60" onClick={() => setMenuOpen(false)} />
             <div className="absolute bottom-0 left-0 right-0 mx-3 mb-3 bg-white rounded-2xl p-6" style={{ transform: "translateY(0)", transition: "transform 500ms cubic-bezier(0.32,0.72,0,1)" }}>
-              <div className="flex items-center gap-1.5 text-[12px] text-gray-500 mb-6">
-                <Clock size={13} /><span>{time} London</span>
-              </div>
+             
               <div className="flex flex-col gap-4 mb-6">
                 {NAV_LINKS.map(({ label, href }) => (
                   <Link key={label} href={href} className="text-[26px] font-medium text-gray-900 leading-tight" onClick={() => setMenuOpen(false)}>{label}</Link>
@@ -588,10 +596,7 @@ height={300}
               <p className="text-[13px] text-gray-400 leading-relaxed max-w-xs mb-6">
                 Precision employability assessment that gives students and institutions an honest, actionable picture of where they stand.
               </p>
-              <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-                <Clock size={12} />
-                <span>{time} London</span>
-              </div>
+           
             </div>
 
             {/* Link columns */}

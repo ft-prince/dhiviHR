@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { signupAction, studentSignupAction } from "@/lib/auth/actions";
 
 export function SignupForm({ variant = "public" }: { variant?: "public" | "student" }) {
@@ -55,7 +56,7 @@ export function SignupForm({ variant = "public" }: { variant?: "public" | "stude
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" required minLength={8} />
+        <PasswordInput id="password" name="password" required minLength={8} />
       </div>
       {error && <div className="text-sm text-destructive">{error}</div>}
       <Button type="submit" className="w-full" disabled={pending}>

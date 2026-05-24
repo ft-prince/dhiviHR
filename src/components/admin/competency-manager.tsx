@@ -110,18 +110,18 @@ export function CompetencyManager({ initialRows }: { initialRows: Row[] }) {
   return (
     <div className="space-y-4">
       {/* Weight summary */}
-      <div className="rounded-2xl border border-border bg-white p-4 flex items-center justify-between">
+      <div className="rounded-2xl border border-border bg-white p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-ink">
           <b>{initialRows.filter((r) => r.active).length}</b> active competencies ·{" "}
           <b>{totalWeight}</b> total weight points
           {totalWeight !== 100 && (
-            <span className="ml-2 text-amber-600 text-xs font-semibold">
+            <span className="mt-1 block sm:mt-0 sm:ml-2 sm:inline text-amber-600 text-xs font-semibold">
               ⚠ Weights don't sum to 100 — scores will be normalised automatically
             </span>
           )}
         </div>
         {!creating && (
-          <Button size="sm" onClick={() => setCreating(true)}>+ Add Competency</Button>
+          <Button size="sm" className="w-full sm:w-auto shrink-0" onClick={() => setCreating(true)}>+ Add Competency</Button>
         )}
       </div>
 

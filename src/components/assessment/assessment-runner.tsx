@@ -62,8 +62,8 @@ export function AssessmentRunner({ assessmentId, questions }: { assessmentId: st
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-white shadow-soft p-8">
-        <h2 className="display-headline text-2xl md:text-3xl">{q.prompt}</h2>
+      <div className="rounded-2xl border border-border bg-white shadow-soft p-5 sm:p-8">
+        <h2 className="display-headline text-xl sm:text-2xl md:text-3xl break-words">{q.prompt}</h2>
         <div className="mt-6 space-y-3">
           {q.options.map((o) => {
             const selected = answers[q.id] === o.id;
@@ -73,14 +73,14 @@ export function AssessmentRunner({ assessmentId, questions }: { assessmentId: st
                 type="button"
                 onClick={() => pick(q.id, o.id)}
                 className={cn(
-                  "w-full text-left rounded-pill border-2 px-5 py-3.5 flex items-center justify-between transition",
+                  "w-full text-left rounded-2xl sm:rounded-pill border-2 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 transition",
                   selected
                     ? "border-brand-500 bg-brand-50 text-ink"
                     : "border-border hover:border-brand-300 hover:bg-brand-50/50 text-ink",
                 )}
               >
-                <span>{o.label}</span>
-                {selected && <CheckCircle2 className="h-5 w-5 text-brand-600" />}
+                <span className="min-w-0">{o.label}</span>
+                {selected && <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-600" />}
               </button>
             );
           })}

@@ -57,7 +57,7 @@ export default async function AdminCodesPage({
         description="Issue single-use codes per college. Students use them at /signup/student to register."
       />
       <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-        <div>
+        <div className="min-w-0">
           <CodesFilterBar filters={{ q, college: collegeFilter }} colleges={collegeList} />
           <DataTable
             rows={batches}

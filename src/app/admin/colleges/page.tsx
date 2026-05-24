@@ -54,7 +54,7 @@ export default async function AdminCollegesPage({
         description="Institutions registered on the platform. Click a college to manage it."
       />
       <div className="grid lg:grid-cols-[1fr_360px] gap-6">
-        <div>
+        <div className="min-w-0">
           <CollegesFilterBar filters={{ q }} />
           <DataTable
             rows={list}

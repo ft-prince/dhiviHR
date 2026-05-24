@@ -10,6 +10,7 @@ import {
   accessCodeBatches,
   accessCodes,
   questions,
+  responses,
   users,
   formTemplates,
   templateQuestions,
@@ -287,8 +288,17 @@ export async function toggleQuestionActiveAction(id: string) {
 
 export async function deleteQuestionAction(id: string) {
   const me = await requireAdmin();
-  await db.delete(templateQuestions).where(eq(templateQuestions.questionId, id));
-  await db.delete(questions).where(eq(questions.id, id));
+  try {
+    // Remove child rows in dependency order before the question itself so the
+    // responses_question_id FK no longer blocks deletion (and we never leave
+    // a partial state where the template join is gone but the question remains).
+    await db.delete(responses).where(eq(responses.questionId, id));
+    await db.delete(templateQuestions).where(eq(templateQuestions.questionId, id));
+    await db.delete(questions).where(eq(questions.id, id));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to delete question";
+    return { ok: false as const, error: message };
+  }
   await audit({ actorId: me.id, action: "question.delete", target: id });
   revalidatePath("/admin/questions");
   return { ok: true as const };

@@ -34,7 +34,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <SiteHeader user={{ name: user.name, role: user.role }} />
+      <SiteHeader user={{ name: user.name, role: user.role }} solid />
 
       <main className="container-narrow pt-24 sm:pt-28 pb-12 sm:pb-16">
 

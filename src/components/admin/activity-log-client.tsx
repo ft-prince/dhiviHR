@@ -50,18 +50,18 @@ export function ActivityLogClient({
   return (
     <div className="space-y-3">
       <form onSubmit={apply} className="flex flex-wrap gap-2 items-end rounded-2xl border border-border bg-white p-4">
-        <div className="flex-1 min-w-44">
+        <div className="flex-1 min-w-0 sm:min-w-44 w-full sm:w-auto">
           <label className="text-xs font-semibold text-ink-soft">Search</label>
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Action or target ID…" className="mt-1" />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label className="text-xs font-semibold text-ink-soft">Action type</label>
-          <select value={action} onChange={(e) => setAction(e.target.value)} className="mt-1 block rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <select value={action} onChange={(e) => setAction(e.target.value)} className="mt-1 block w-full sm:w-auto rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500">
             <option value="">All actions</option>
             {actionOptions.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button type="submit" size="sm">Apply</Button>
           {hasFilters && <Button type="button" size="sm" variant="ghost" onClick={clear}>Clear</Button>}
         </div>

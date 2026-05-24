@@ -82,12 +82,12 @@ function InTemplateCard({
   return (
     <div className="rounded-xl border border-border bg-white">
       {/* Header row */}
-      <div className="flex items-start gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex-1 min-w-0">
           <span className="text-xs font-semibold text-brand-600">
             {competencyLabels[q.competency] ?? q.competency}
           </span>
-          <p className="mt-0.5 text-sm text-ink">{q.prompt}</p>
+          <p className="mt-0.5 text-sm text-ink break-words">{q.prompt}</p>
           {mode === "view" && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {(q.options as Option[]).map((o) => (
@@ -98,7 +98,7 @@ function InTemplateCard({
             </div>
           )}
         </div>
-        <div className="flex shrink-0 gap-1 flex-wrap justify-end">
+        <div className="flex gap-1 flex-wrap sm:shrink-0 sm:justify-end">
           <Button
             size="sm"
             variant="ghost"
@@ -238,21 +238,21 @@ export function TemplateDetailClient({
     <div className="space-y-6">
       {/* Template meta card */}
       <div className="rounded-2xl border border-border bg-white p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {template.isDefault && (
                 <span className="rounded-full bg-brand-500 text-white px-2 py-0.5 text-xs font-bold">Default</span>
               )}
               {assignedColleges.length > 0 && (
-                <span className="text-xs text-ink-soft">
+                <span className="text-xs text-ink-soft break-words">
                   Assigned to: {assignedColleges.map((c) => c.name).join(", ")}
                 </span>
               )}
             </div>
             {template.description && <p className="mt-2 text-sm text-ink-soft">{template.description}</p>}
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 flex-wrap">
             <Button size="sm" variant="outline" onClick={() => setEditingMeta((v) => !v)}>
               {editingMeta ? "Cancel" : "Edit Template"}
             </Button>
@@ -275,7 +275,7 @@ export function TemplateDetailClient({
 
       <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
         {/* ── Left: questions in this template ── */}
-        <div className="space-y-3">
+        <div className="space-y-3 min-w-0">
           <div className="flex items-center justify-between">
             <h2 className="font-display font-bold text-lg text-ink">
               Questions in Template
@@ -306,7 +306,7 @@ export function TemplateDetailClient({
         </div>
 
         {/* ── Right: question bank ── */}
-        <div className="space-y-3 sticky top-6">
+        <div className="space-y-3 min-w-0 lg:sticky lg:top-6">
           <h2 className="font-display font-bold text-lg text-ink">
             Add from Bank
             <span className="ml-2 text-sm font-normal text-ink-soft">({filteredAvailable.length})</span>

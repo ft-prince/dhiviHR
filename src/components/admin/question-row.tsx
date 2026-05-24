@@ -37,7 +37,7 @@ export function QuestionRow({
 
   return (
     <div className="rounded-2xl border border-border bg-white p-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs text-ink-soft flex-wrap">
             <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-bold">#{orderIndex || "—"}</span>
@@ -45,9 +45,9 @@ export function QuestionRow({
               {active ? "Active" : "Inactive"}
             </span>
           </div>
-          <div className="mt-2 font-medium text-ink">{prompt}</div>
+          <div className="mt-2 font-medium text-ink break-words">{prompt}</div>
         </div>
-        <div className="flex shrink-0 gap-1 flex-wrap justify-end">
+        <div className="flex gap-1 flex-wrap sm:shrink-0 sm:justify-end">
           <Button size="sm" variant="ghost" onClick={() => { setExpanded((v) => !v); setEditing(false); }}>
             {expanded && !editing ? "Hide" : "Options"}
           </Button>

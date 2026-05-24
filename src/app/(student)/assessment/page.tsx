@@ -8,9 +8,9 @@ export default async function AssessmentLandingPage() {
   const user = session?.user ? { name: session.user.name, role: (session.user as { role?: string }).role } : null;
   return (
     <>
-      <SiteHeader user={user} />
-      <main className="container-narrow py-16">
-        <h1 className="display-headline text-4xl">Interview Readiness Assessment</h1>
+      <SiteHeader user={user} solid />
+      <main className="container-narrow pt-24 sm:pt-28 pb-16">
+        <h1 className="display-headline text-3xl sm:text-4xl">Interview Readiness Assessment</h1>
         <p className="mt-3 text-ink-muted max-w-2xl">
           25 situational questions across 5 competencies. Takes about 12 minutes. Your answers are saved
           on every submit — you can resume any time.

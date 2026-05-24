@@ -21,9 +21,11 @@ function dashboardHref(role?: string) {
 
 interface SiteHeaderProps {
   user?: { name?: string | null; role?: string } | null;
+  /** Force the solid (dark-text) style for pages with a light background. */
+  solid?: boolean;
 }
 
-export function SiteHeader({ user }: SiteHeaderProps) {
+export function SiteHeader({ user, solid = false }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const isLoggedIn = !!user;
@@ -35,19 +37,20 @@ export function SiteHeader({ user }: SiteHeaderProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinkColor = scrolled ? "#475569" : "rgba(255,255,255,0.6)";
-  const navLinkHoverColor = scrolled ? "#0F172A" : "rgba(255,255,255,1)";
+  const showSolid = solid || scrolled;
+  const navLinkColor = showSolid ? "#475569" : "rgba(255,255,255,0.6)";
+  const navLinkHoverColor = showSolid ? "#0F172A" : "rgba(255,255,255,1)";
 
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={
-        scrolled
+        showSolid
           ? {
               borderBottom: "1px solid rgba(229,231,235,0.7)",
               background: "rgba(255,255,255,0.93)",
               backdropFilter: "blur(16px)",
-              boxShadow: "0 1px 16px -4px rgba(15,23,42,0.08)",
+              boxShadow: scrolled ? "0 1px 16px -4px rgba(15,23,42,0.08)" : "none",
             }
           : { borderBottom: "1px solid transparent", background: "transparent" }
       }
@@ -55,13 +58,13 @@ export function SiteHeader({ user }: SiteHeaderProps) {
       <div className="container-narrow flex h-16 items-center justify-between gap-3">
         {/* Wordmark: green mark + adaptive text */}
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <LogoMark className={`h-9 w-9 ${scrolled ? "text-brand-500" : "text-brand-400"}`} />
+          <LogoMark className={`h-9 w-9 ${showSolid ? "text-brand-500" : "text-brand-400"}`} />
           <span
             className="font-display font-extrabold text-xl tracking-wide transition-colors duration-300"
-            style={{ color: scrolled ? "#0F172A" : "rgba(255,255,255,0.92)" }}
+            style={{ color: showSolid ? "#0F172A" : "rgba(255,255,255,0.92)" }}
           >
             DHIVI{" "}
-            <span style={{ color: scrolled ? "#16A34A" : "#4ade80" }}>HR</span>
+            <span style={{ color: showSolid ? "#16A34A" : "#4ade80" }}>HR</span>
           </span>
         </Link>
 
@@ -92,7 +95,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
                   variant="ghost"
                   size="sm"
                   className={
-                    scrolled ? "" : "text-white/70 hover:text-white hover:bg-white/10 border-0"
+                    showSolid ? "" : "text-white/70 hover:text-white hover:bg-white/10 border-0"
                   }
                 >
                   Login
@@ -107,7 +110,7 @@ export function SiteHeader({ user }: SiteHeaderProps) {
         <button
           onClick={() => setOpen((v) => !v)}
           className="md:hidden h-10 w-10 grid place-items-center rounded-md transition-colors"
-          style={{ color: scrolled ? "#0F172A" : "rgba(255,255,255,0.8)" }}
+          style={{ color: showSolid ? "#0F172A" : "rgba(255,255,255,0.8)" }}
           aria-label="Toggle navigation"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
