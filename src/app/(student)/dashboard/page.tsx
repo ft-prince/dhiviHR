@@ -30,93 +30,160 @@ export default async function DashboardPage() {
 
   const latest = attempts.find((a) => a.status === "completed");
   const band = latest ? READINESS_BANDS.find((b) => b.level === latest.level) : null;
+  const user = session.user as { name?: string | null; email?: string | null; role?: string };
 
   return (
     <>
-      <SiteHeader user={{ name: session.user.name, role: (session.user as { role?: string }).role }} />
-      <main className="container-narrow py-12">
-        <div className="flex items-center justify-between">
+      <SiteHeader user={{ name: user.name, role: user.role }} />
+
+      <main className="container-narrow pt-24 sm:pt-28 pb-12 sm:pb-16">
+
+        {/* ── Page header ──────────────────────────────────────── */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-10">
           <div>
-            <h1 className="display-headline text-4xl">Welcome, {session.user.name?.split(" ")[0] ?? "there"}</h1>
-            <p className="mt-2 text-ink-muted">Your readiness journey at a glance.</p>
+            <h1 className="display-headline text-3xl sm:text-4xl">
+              Welcome, {user.name?.split(" ")[0] ?? "there"}
+            </h1>
+            <p className="mt-1.5 text-sm sm:text-base text-ink-muted">
+              Your readiness journey at a glance.
+            </p>
           </div>
-          <form action={logoutAction}><Button variant="ghost" size="sm">Log out</Button></form>
+          <form action={logoutAction}>
+            <Button variant="outline" size="sm" className="self-start sm:self-auto">
+              Log out
+            </Button>
+          </form>
         </div>
 
-        <div className="mt-10 grid md:grid-cols-3 gap-5">
-          <div className="md:col-span-2 rounded-2xl border border-border bg-white p-8 shadow-soft">
-            <div className="text-xs font-bold uppercase tracking-widest text-brand-600">Current Readiness</div>
+        {/* ── Top cards ────────────────────────────────────────── */}
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+
+          {/* Current readiness */}
+          <div className="sm:col-span-2 rounded-2xl border border-border bg-white p-6 sm:p-8 shadow-soft">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-600">
+              Current Readiness
+            </div>
             {latest && band ? (
               <>
-                <div className="mt-2 display-headline text-3xl">{band.label}</div>
-                <div className="mt-1 text-ink-muted">Score: <b className="text-ink">{latest.total} / 100</b></div>
+                <div className="mt-2 display-headline text-2xl sm:text-3xl">{band.label}</div>
+                <div className="mt-1 text-sm text-ink-muted">
+                  Score: <b className="text-ink">{latest.total} / 100</b>
+                </div>
                 <div className="mt-4 inline-flex rounded-pill bg-brand-50 text-brand-700 px-4 py-1.5 text-xs font-bold uppercase tracking-wider">
                   {latest.track}
                 </div>
-                <div className="mt-6 flex gap-3">
-                  <Link href={`/report/${latest.id}`}><Button>View Report</Button></Link>
-                  <Link href="/assessment"><Button variant="outline">Retake</Button></Link>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href={`/report/${latest.id}`}>
+                    <Button size="sm">View Report</Button>
+                  </Link>
+                  <Link href="/assessment">
+                    <Button variant="outline" size="sm">Retake Assessment</Button>
+                  </Link>
                 </div>
               </>
             ) : (
               <>
-                <div className="mt-2 display-headline text-3xl">Not Yet Assessed</div>
-                <p className="mt-2 text-ink-muted">Take the 12-minute assessment to map your employability level.</p>
-                <div className="mt-6"><Link href="/assessment"><Button>Start Assessment</Button></Link></div>
+                <div className="mt-2 display-headline text-2xl sm:text-3xl">Not Yet Assessed</div>
+                <p className="mt-2 text-sm text-ink-muted max-w-sm">
+                  Take the 20-minute assessment to map your employability level across five competency dimensions.
+                </p>
+                <div className="mt-6">
+                  <Link href="/assessment">
+                    <Button size="sm">Start Assessment</Button>
+                  </Link>
+                </div>
               </>
             )}
           </div>
-          <div className="rounded-2xl border border-border bg-brand-50 p-8">
-            <div className="text-xs font-bold uppercase tracking-widest text-brand-700">Profile</div>
-            <div className="mt-3 text-sm">
-              <div className="text-ink-muted">Name</div>
-              <div className="font-medium text-ink">{session.user.name}</div>
+
+          {/* Profile */}
+          <div className="rounded-2xl border border-border bg-brand-50 p-6 sm:p-8">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-brand-700 mb-4">
+              Profile
             </div>
-            <div className="mt-3 text-sm">
-              <div className="text-ink-muted">Email</div>
-              <div className="font-medium text-ink">{session.user.email}</div>
-            </div>
-            <div className="mt-3 text-sm">
-              <div className="text-ink-muted">Role</div>
-              <div className="font-medium text-ink capitalize">{session.user.role.replace("_", " ")}</div>
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-ink-muted">Name</dt>
+                <dd className="font-medium text-ink mt-0.5">{user.name ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-ink-muted">Email</dt>
+                <dd className="font-medium text-ink mt-0.5 break-all">{user.email ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-ink-muted">Role</dt>
+                <dd className="font-medium text-ink mt-0.5 capitalize">
+                  {user.role?.replace("_", " ") ?? "—"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        {/* ── Attempts table ───────────────────────────────────── */}
+        <div className="mt-10 sm:mt-12">
+          <h2 className="display-headline text-xl sm:text-2xl mb-4">All Attempts</h2>
+          <div className="rounded-2xl border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[520px]">
+                <thead className="bg-brand-50 text-ink-muted">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Started</th>
+                    <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Status</th>
+                    <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Score</th>
+                    <th className="text-left px-4 py-3 font-semibold whitespace-nowrap">Level</th>
+                    <th className="text-right px-4 py-3 font-semibold whitespace-nowrap">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attempts.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-10 text-center text-ink-soft">
+                        No attempts yet — start your first assessment above.
+                      </td>
+                    </tr>
+                  )}
+                  {attempts.map((a) => (
+                    <tr key={a.id} className="border-t border-border hover:bg-brand-50/30 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap">{fmtDate(a.startedAt)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap capitalize">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${
+                          a.status === "completed"
+                            ? "bg-brand-50 text-brand-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}>
+                          {a.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium">{a.total ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        {a.level ? READINESS_BANDS.find((b) => b.level === a.level)?.label : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {a.status === "completed" ? (
+                          <Link
+                            href={`/report/${a.id}`}
+                            className="text-brand-600 font-semibold hover:underline text-sm"
+                          >
+                            Report →
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/assessment/${a.id}`}
+                            className="text-brand-600 font-semibold hover:underline text-sm"
+                          >
+                            Resume →
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div className="mt-10">
-          <h2 className="display-headline text-2xl">All Attempts</h2>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-brand-50 text-ink-muted">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold">Started</th>
-                  <th className="text-left px-4 py-3 font-semibold">Status</th>
-                  <th className="text-left px-4 py-3 font-semibold">Score</th>
-                  <th className="text-left px-4 py-3 font-semibold">Level</th>
-                  <th className="text-right px-4 py-3 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attempts.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-ink-soft">No attempts yet</td></tr>
-                )}
-                {attempts.map((a) => (
-                  <tr key={a.id} className="border-t border-border">
-                    <td className="px-4 py-3">{fmtDate(a.startedAt)}</td>
-                    <td className="px-4 py-3 capitalize">{a.status.replace("_", " ")}</td>
-                    <td className="px-4 py-3">{a.total ?? "—"}</td>
-                    <td className="px-4 py-3">{a.level ? READINESS_BANDS.find((b) => b.level === a.level)?.label : "—"}</td>
-                    <td className="px-4 py-3 text-right">
-                      {a.status === "completed"
-                        ? <Link href={`/report/${a.id}`} className="text-brand-600 font-semibold hover:underline">Report →</Link>
-                        : <Link href={`/assessment/${a.id}`} className="text-brand-600 font-semibold hover:underline">Resume →</Link>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </main>
     </>
   );

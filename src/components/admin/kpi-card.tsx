@@ -18,21 +18,29 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white p-5 md:p-6 shadow-soft",
+        "rounded-2xl border bg-white p-4 sm:p-5 md:p-6 shadow-soft",
         tone === "accent" ? "border-brand-200 bg-brand-50/60" : "border-border",
       )}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-ink-soft">{label}</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-ink-soft leading-tight">
+          {label}
+        </span>
         {Icon && (
-          <span className="h-9 w-9 rounded-full bg-brand-50 grid place-items-center text-brand-600">
-            <Icon className="h-4 w-4" />
+          <span className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-brand-50 grid place-items-center text-brand-600 shrink-0">
+            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </span>
         )}
       </div>
-      <div className="mt-3 font-display font-bold text-3xl md:text-4xl text-ink leading-none">{value}</div>
-      <div className="mt-2 flex items-center gap-2 text-xs">
-        {delta && <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-bold">{delta}</span>}
+      <div className="mt-2.5 font-display font-bold text-2xl sm:text-3xl md:text-4xl text-ink leading-none tabular-nums">
+        {value}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+        {delta && (
+          <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 font-bold">
+            {delta}
+          </span>
+        )}
         {hint && <span className="text-ink-soft">{hint}</span>}
       </div>
     </div>

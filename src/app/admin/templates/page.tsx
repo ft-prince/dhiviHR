@@ -1,4 +1,4 @@
-import { desc, eq, ilike, sql } from "drizzle-orm";
+import { desc, eq, ilike, isNotNull, sql } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formTemplates, templateQuestions, colleges } from "@/lib/db/schema";
@@ -23,7 +23,7 @@ export default async function AdminTemplatesPage({
 
   const where = q ? ilike(formTemplates.name, `%${q}%`) : undefined;
 
-  const [templateList, [{ total }], collegeList] = await Promise.all([
+  const [templateList, [{ total }], collegeList, questionCounts, collegeCounts] = await Promise.all([
     db
       .select({
         id: formTemplates.id,
@@ -31,17 +31,45 @@ export default async function AdminTemplatesPage({
         description: formTemplates.description,
         isDefault: formTemplates.isDefault,
         createdAt: formTemplates.createdAt,
-        questionCount: sql<number>`(SELECT count(*)::int FROM ${templateQuestions} WHERE ${templateQuestions.templateId} = ${formTemplates.id})`,
-        collegeCount: sql<number>`(SELECT count(*)::int FROM ${colleges} WHERE ${colleges.templateId} = ${formTemplates.id})`,
       })
       .from(formTemplates)
       .where(where)
       .orderBy(desc(formTemplates.createdAt))
       .limit(PAGE_SIZE)
       .offset((page - 1) * PAGE_SIZE),
+
     db.select({ total: sql<number>`count(*)::int` }).from(formTemplates).where(where),
+
     db.select({ id: colleges.id, name: colleges.name }).from(colleges).orderBy(colleges.name),
+
+    // Aggregate question counts per template — avoids correlated subquery driver issues
+    db
+      .select({
+        templateId: templateQuestions.templateId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(templateQuestions)
+      .groupBy(templateQuestions.templateId),
+
+    // Aggregate college counts per template
+    db
+      .select({
+        templateId: colleges.templateId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(colleges)
+      .where(isNotNull(colleges.templateId))
+      .groupBy(colleges.templateId),
   ]);
+
+  const qMap = new Map(questionCounts.map((r) => [r.templateId, r.count]));
+  const cMap = new Map(collegeCounts.map((r) => [r.templateId as string, r.count]));
+
+  const rows = templateList.map((t) => ({
+    ...t,
+    questionCount: qMap.get(t.id) ?? 0,
+    collegeCount: cMap.get(t.id) ?? 0,
+  }));
 
   return (
     <>
@@ -53,7 +81,7 @@ export default async function AdminTemplatesPage({
         <div>
           <TemplatesFilterBar filters={{ q }} />
           <DataTable
-            rows={templateList}
+            rows={rows}
             emptyText={q ? "No templates match the current search." : "No templates yet — create your first one →"}
             columns={[
               {

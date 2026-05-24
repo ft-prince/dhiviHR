@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ["shaders"],
   poweredByHeader: false,
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },

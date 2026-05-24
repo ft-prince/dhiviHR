@@ -1,4 +1,4 @@
-import { desc, eq, ilike, or, and, sql } from "drizzle-orm";
+import { desc, eq, ilike, ne, or, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, colleges } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
@@ -20,11 +20,11 @@ export default async function AdminUsersPage({
   const collegeFilter = sp.college ?? "";
   const page = Math.max(1, Number(sp.page ?? 1));
 
-  const filters = [];
+  const filters = [ne(users.role, "super_admin" as never)];
   if (q) filters.push(or(ilike(users.name, `%${q}%`), ilike(users.email, `%${q}%`))!);
   if (role) filters.push(eq(users.role, role as never));
   if (collegeFilter) filters.push(eq(users.collegeId, collegeFilter));
-  const where = filters.length > 0 ? and(...filters) : undefined;
+  const where = and(...filters);
 
   const [list, [{ total }], collegeList] = await Promise.all([
     db

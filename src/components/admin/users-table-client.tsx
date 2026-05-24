@@ -24,7 +24,14 @@ interface College { id: string; name: string }
 
 interface Filters { q: string; role: string; college: string }
 
-const ROLES = ["student", "college_student", "client_admin", "super_admin"];
+const ROLES = ["student", "college_student", "client_admin"];
+
+const ROLE_LABELS: Record<string, string> = {
+  student: "Student",
+  college_student: "College Student",
+  client_admin: "Admin",
+  super_admin: "Super Admin",
+};
 
 function UserEditRow({ user, colleges, onDone }: { user: User; colleges: College[]; onDone: () => void }) {
   const router = useRouter();
@@ -109,7 +116,7 @@ export function UsersTableClient({
           <label className="text-xs font-semibold text-ink-soft">Role</label>
           <select value={role} onChange={(e) => setRole(e.target.value)} className="mt-1 block rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500">
             <option value="">All roles</option>
-            {ROLES.map((r) => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}
+            {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>)}
           </select>
         </div>
         <div>
@@ -136,7 +143,7 @@ export function UsersTableClient({
             <div><div className="font-medium text-ink">{r.name ?? "—"}</div><div className="text-xs text-ink-soft">{r.email}</div></div>
           )},
           { key: "role", header: "Role", render: (r) => (
-            <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-bold whitespace-nowrap">{r.role.replace(/_/g, " ")}</span>
+            <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-bold whitespace-nowrap">{ROLE_LABELS[r.role] ?? r.role}</span>
           )},
           { key: "phone", header: "Phone", render: (r) => r.phone ?? "—" },
           { key: "college", header: "College", render: (r) => {

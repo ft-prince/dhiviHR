@@ -1,32 +1,39 @@
 import { eq, sql, desc, gte, and } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { users, assessments, scores, payments, colleges, accessCodes } from "@/lib/db/schema";
 
-export async function getPlatformStats() {
-  const [
-    [{ totalUsers }],
-    [{ studentUsers }],
-    [{ collegeStudents }],
-    [{ totalAttempts }],
-    [{ completedAttempts }],
-    [{ paidCount, revenuePaise }],
-    [{ totalColleges }],
-    [{ codesIssued }],
-    [{ codesRedeemed }],
-  ] = await Promise.all([
-    db.select({ totalUsers: sql<number>`count(*)::int` }).from(users),
-    db.select({ studentUsers: sql<number>`count(*)::int` }).from(users).where(eq(users.role, "student")),
-    db.select({ collegeStudents: sql<number>`count(*)::int` }).from(users).where(eq(users.role, "college_student")),
-    db.select({ totalAttempts: sql<number>`count(*)::int` }).from(assessments),
-    db.select({ completedAttempts: sql<number>`count(*)::int` }).from(assessments).where(eq(assessments.status, "completed")),
+async function _getPlatformStats() {
+  const [[userRow], [attemptRow], [paymentRow], [collegeRow], [codeRow]] = await Promise.all([
     db.select({
-      paidCount: sql<number>`count(*) FILTER (WHERE status = 'paid')::int`,
+      totalUsers:     sql<number>`count(*)::int`,
+      studentUsers:   sql<number>`count(*) FILTER (WHERE role = 'student')::int`,
+      collegeStudents: sql<number>`count(*) FILTER (WHERE role = 'college_student')::int`,
+    }).from(users),
+
+    db.select({
+      totalAttempts:     sql<number>`count(*)::int`,
+      completedAttempts: sql<number>`count(*) FILTER (WHERE status = 'completed')::int`,
+    }).from(assessments),
+
+    db.select({
+      paidCount:    sql<number>`count(*) FILTER (WHERE status = 'paid')::int`,
       revenuePaise: sql<number>`COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::int`,
     }).from(payments),
+
     db.select({ totalColleges: sql<number>`count(*)::int` }).from(colleges),
-    db.select({ codesIssued: sql<number>`count(*)::int` }).from(accessCodes),
-    db.select({ codesRedeemed: sql<number>`count(*) FILTER (WHERE redeemed_at IS NOT NULL)::int` }).from(accessCodes),
+
+    db.select({
+      codesIssued:   sql<number>`count(*)::int`,
+      codesRedeemed: sql<number>`count(*) FILTER (WHERE redeemed_at IS NOT NULL)::int`,
+    }).from(accessCodes),
   ]);
+
+  const { totalUsers, studentUsers, collegeStudents } = userRow;
+  const { totalAttempts, completedAttempts } = attemptRow;
+  const { paidCount, revenuePaise } = paymentRow;
+  const { totalColleges } = collegeRow;
+  const { codesIssued, codesRedeemed } = codeRow;
 
   return {
     totalUsers, studentUsers, collegeStudents,
@@ -37,16 +44,27 @@ export async function getPlatformStats() {
   };
 }
 
-export async function getLevelDistribution() {
-  const rows = await db
+export const getPlatformStats = unstable_cache(
+  _getPlatformStats,
+  ["platform-stats"],
+  { revalidate: 60, tags: ["platform-stats"] },
+);
+
+async function _getLevelDistribution() {
+  return db
     .select({
       level: scores.level,
       count: sql<number>`count(*)::int`,
     })
     .from(scores)
     .groupBy(scores.level);
-  return rows;
 }
+
+export const getLevelDistribution = unstable_cache(
+  _getLevelDistribution,
+  ["level-distribution"],
+  { revalidate: 60, tags: ["level-distribution"] },
+);
 
 export async function getRecentSignups(limit = 8) {
   return db
@@ -76,7 +94,7 @@ export async function getRecentAttempts(limit = 8) {
 
 export async function getRevenueByDay(days = 14) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  const rows = await db
+  return db
     .select({
       day: sql<string>`to_char(created_at, 'YYYY-MM-DD')`,
       amount: sql<number>`COALESCE(SUM(amount), 0)::int`,
@@ -86,5 +104,4 @@ export async function getRevenueByDay(days = 14) {
     .where(and(eq(payments.status, "paid"), gte(payments.createdAt, since)))
     .groupBy(sql`to_char(created_at, 'YYYY-MM-DD')`)
     .orderBy(sql`to_char(created_at, 'YYYY-MM-DD')`);
-  return rows;
 }

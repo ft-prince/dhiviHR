@@ -9,6 +9,7 @@ import {
   primaryKey,
   pgEnum,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -191,7 +192,11 @@ export const assessments = pgTable("assessments", {
   status: assessmentStatus("status").notNull().default("in_progress"),
   startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-});
+}, (t) => ({
+  userIdx:   index("assessments_user_id_idx").on(t.userId),
+  statusIdx: index("assessments_status_idx").on(t.status),
+  startIdx:  index("assessments_started_at_idx").on(t.startedAt),
+}));
 
 export const responses = pgTable("responses", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -201,7 +206,9 @@ export const responses = pgTable("responses", {
   weight: integer("weight").notNull(),
   max: integer("max").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (t) => ({
+  assessmentIdx: index("responses_assessment_id_idx").on(t.assessmentId),
+}));
 
 export const scores = pgTable("scores", {
   id: uuid("id").primaryKey().defaultRandom(),

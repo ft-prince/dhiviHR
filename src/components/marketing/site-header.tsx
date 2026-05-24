@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { LogoMark } from "@/components/brand/logo";
 
 const LINKS = [
-  { href: "#problem", label: "Why DhiviHR" },
-  { href: "#competencies", label: "What We Measure" },
-  { href: "#how", label: "How It Works" },
-  { href: "#colleges", label: "For Colleges" },
+  { href: "/#features", label: "How It Works" },
+  { href: "/#about",    label: "About" },
+  { href: "/#colleges", label: "For Colleges" },
+  { href: "mailto:dhivihr@gmail.com", label: "Contact" },
 ];
 
 function dashboardHref(role?: string) {
