@@ -1,12 +1,96 @@
 "use server";
 
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { assessments, responses, questions, scores } from "@/lib/db/schema";
+import {
+  assessments,
+  responses,
+  questions,
+  scores,
+  users,
+  colleges,
+  formTemplates,
+  templateQuestions,
+} from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
-import { scoreAssessment, type Competency, COMPETENCIES } from "@/lib/scoring";
+import { scoreAssessment, type Competency } from "@/lib/scoring";
+
+type AssessmentQuestion = {
+  id: string;
+  competency: string;
+  prompt: string;
+  options: unknown;
+  active: boolean;
+  orderIndex: number;
+};
+
+const QUESTION_FIELDS = {
+  id: questions.id,
+  competency: questions.competency,
+  prompt: questions.prompt,
+  options: questions.options,
+  active: questions.active,
+  orderIndex: questions.orderIndex,
+} as const;
+
+/**
+ * Resolve which template applies to a user:
+ *   1. the template assigned to the user's college, else
+ *   2. the platform default template.
+ * Returns null when neither exists.
+ */
+async function resolveTemplateIdForUser(userId: string): Promise<string | null> {
+  const [u] = await db
+    .select({ collegeId: users.collegeId })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (u?.collegeId) {
+    const [c] = await db
+      .select({ templateId: colleges.templateId })
+      .from(colleges)
+      .where(eq(colleges.id, u.collegeId))
+      .limit(1);
+    if (c?.templateId) return c.templateId;
+  }
+
+  const [def] = await db
+    .select({ id: formTemplates.id })
+    .from(formTemplates)
+    .where(eq(formTemplates.isDefault, true))
+    .limit(1);
+  return def?.id ?? null;
+}
+
+/**
+ * The exact set of questions for a user's assessment. Only questions explicitly
+ * attached to the resolved template (and active in both the template and the
+ * question bank) are returned — no global questions are merged in. Falls back to
+ * all active questions only when no template is configured anywhere.
+ */
+async function resolveAssessmentQuestions(userId: string): Promise<AssessmentQuestion[]> {
+  const templateId = await resolveTemplateIdForUser(userId);
+
+  if (!templateId) {
+    return db.select(QUESTION_FIELDS).from(questions).where(eq(questions.active, true));
+  }
+
+  return db
+    .select(QUESTION_FIELDS)
+    .from(templateQuestions)
+    .innerJoin(questions, eq(templateQuestions.questionId, questions.id))
+    .where(
+      and(
+        eq(templateQuestions.templateId, templateId),
+        eq(templateQuestions.active, true),
+        eq(questions.active, true),
+      ),
+    )
+    .orderBy(asc(templateQuestions.orderIndex), asc(questions.orderIndex));
+}
 
 const optionSchema = z.object({ id: z.string(), label: z.string(), weight: z.number().int().min(0).max(4) });
 
@@ -60,8 +144,10 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
   if (!attempt[0]) return { ok: false as const, error: "Assessment not found" };
   if (attempt[0].status === "completed") return { ok: false as const, error: "Already submitted" };
 
-  // Hydrate questions to compute weights server-side (don't trust client).
-  const qs = await db.select().from(questions);
+  // Hydrate ONLY the template's questions to compute weights server-side. Any
+  // answer for a question outside the resolved template is ignored, so a stale
+  // or tampered client cannot inject extra (global) questions into the score.
+  const qs = await resolveAssessmentQuestions(user.id);
   const qMap = new Map(qs.map((q) => [q.id, q]));
 
   const scored: { competency: Competency; weight: number; max: number; optionId: string; questionId: string }[] = [];
@@ -119,12 +205,6 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
 }
 
 export async function getActiveQuestionsAction() {
-  const qs = await db.select().from(questions).where(eq(questions.active, true));
-  // Stable order: competency order then orderIndex
-  const compOrder = new Map(COMPETENCIES.map((c, i) => [c as string, i]));
-  return qs.sort((a, b) => {
-    const ca = compOrder.get(a.competency) ?? 99;
-    const cb = compOrder.get(b.competency) ?? 99;
-    return ca - cb || a.orderIndex - b.orderIndex;
-  });
+  const user = await requireUser();
+  return resolveAssessmentQuestions(user.id);
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { customAlphabet } from "nanoid";
@@ -319,6 +320,34 @@ export async function setUserRoleAction(input: z.infer<typeof roleSchema>) {
   await db.update(users).set({ role: parsed.data.role }).where(eq(users.id, parsed.data.userId));
   await audit({ actorId: me.id, action: "user.role_change", target: parsed.data.userId, meta: { role: parsed.data.role } });
   revalidatePath("/admin/users");
+  revalidatePath("/super/admins");
+  return { ok: true as const };
+}
+
+const createAdminSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["client_admin", "super_admin"]),
+});
+
+export async function createAdminAction(input: z.infer<typeof createAdminSchema>) {
+  const me = await requireAdmin();
+  if (me.role !== "super_admin") return { ok: false as const, error: "Only super admins can create admins" };
+  const parsed = createAdminSchema.safeParse(input);
+  if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
+  const { name, email, password, role } = parsed.data;
+
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+  if (existing[0]) return { ok: false as const, error: "An account with this email already exists" };
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const [row] = await db
+    .insert(users)
+    .values({ name, email, passwordHash, role })
+    .returning({ id: users.id });
+
+  await audit({ actorId: me.id, action: "admin.create", target: row.id, meta: { role, email } });
   revalidatePath("/super/admins");
   return { ok: true as const };
 }
