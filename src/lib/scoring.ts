@@ -1,24 +1,19 @@
-import { bandFromScore, type ReadinessLevel } from "./utils";
+export type CompetencyGap = "critical_gap" | "development_gap" | "strength";
+export type ReadinessTier = "future_ready" | "accelerator" | "practitioner" | "learner";
 
-// ── Static fallbacks (used until the DB has competency rows) ─────────────────
+export interface CompetencyDetail{
+  average: number;
+  gap: CompetencyGap;
+}
 
-export const COMPETENCIES = [
-  "communication_confidence",
-  "problem_solving",
-  "teamwork_leadership",
-  "initiative_growth",
-  "interview_readiness",
-] as const;
+export interface AssessmentScore{
+  total: number;
+  competencyBreakdown: Record<string, CompetencyDetail>;
+  level: ReadinessTier;
+  levelLabel: string;
+  track: string;
+}
 
-export type Competency = (typeof COMPETENCIES)[number];
-
-export const COMPETENCY_LABELS: Record<string, string> = {
-  communication_confidence: "Communication & Confidence",
-  problem_solving: "Problem Solving Ability",
-  teamwork_leadership: "Teamwork & Leadership",
-  initiative_growth: "Initiative & Growth Mindset",
-  interview_readiness: "Interview Readiness",
-};
 
 export interface ScoredResponse {
   /** Now a plain string — any slug from the competencies table */
@@ -27,53 +22,70 @@ export interface ScoredResponse {
   max: number;
 }
 
-export interface AssessmentScore {
-  total: number;
-  competencyBreakdown: Record<string, number>;
-  level: ReadinessLevel;
-  levelLabel: string;
-  track: string;
-}
-
 /**
  * Generic scoring — groups responses by whatever competency slugs appear.
  * Each competency contributes proportionally to 100 total points.
  * Pass `competencyWeights` (slug → point allocation) for custom weighting;
  * otherwise each competency gets an equal share of 100.
  */
-export function scoreAssessment(
-  responses: ScoredResponse[],
-  competencyWeights?: Record<string, number>,
-): AssessmentScore {
+export function scoreAssessment(responses: ScoredResponse[]): AssessmentScore {
   const seen = Array.from(new Set(responses.map((r) => r.competency)));
-  const slugs = seen.length > 0 ? seen : [...COMPETENCIES];
+  const comps = seen.length > 0 ? seen : "";
 
-  // Build weight map: provided overrides, or equal share of 100
-  const totalWeight = competencyWeights
-    ? Object.values(competencyWeights).reduce((a, b) => a + b, 0)
-    : 100;
-  const perComp = (slug: string) =>
-    competencyWeights ? (competencyWeights[slug] ?? 0) : +(100 / slugs.length).toFixed(4);
+  const breakdown: Record<string, CompetencyDetail> = {};
 
-  const breakdown: Record<string, number> = {};
-  for (const slug of slugs) {
-    const items = responses.filter((r) => r.competency === slug);
-    if (items.length === 0) { breakdown[slug] = 0; continue; }
+  // 1. Calculate Average & Gap for each Competency
+  for (const comp of comps) {
+    const items = responses.filter((r) => r.competency === comp);
+    
+    if (items.length === 0) {
+      breakdown[comp] = { average: 0, gap: "critical_gap" };
+      continue;
+    }
+
     const sum = items.reduce((s, r) => s + r.weight, 0);
-    const max = items.reduce((s, r) => s + r.max, 0);
-    breakdown[slug] = max === 0 ? 0 : +((sum / max) * perComp(slug)).toFixed(2);
+    // Average = Total score for that assessment divided by total questions in that competency
+    const average = +(sum / items.length).toFixed(2);
+
+    // Classification mapping for competencies
+    let gap: CompetencyGap = "critical_gap";
+    if (average >= 3.25) {
+      gap = "strength";
+    } else if (average >= 1.75) {
+      gap = "development_gap";
+    }
+
+    breakdown[comp] = { average, gap };
   }
 
-  const raw = Object.values(breakdown).reduce((a, b) => a + b, 0);
-  // Normalise to 100 if weights didn't sum to 100
-  const total = totalWeight > 0 ? +((raw / totalWeight) * 100).toFixed(2) : raw;
-  const band = bandFromScore(total);
+  // 2. Calculate Overall Average 
+  // Sum of average scores of all competencies divided by number of competencies
+  const totalCompetencyAverages = Object.values(breakdown).reduce((sum, c) => sum + c.average, 0);
+  const overallAverage = comps.length > 0 ? +(totalCompetencyAverages / comps.length).toFixed(2) : 0;
+
+  // 3. Classify Overall Readiness Tier
+  let level: ReadinessTier = "learner";
+  let levelLabel = "Learner";
+
+  if (overallAverage >= 3.50) {
+    level = "future_ready";
+    levelLabel = "Future Ready";
+  } else if (overallAverage >= 2.75) {
+    level = "accelerator";
+    levelLabel = "Accelerator";
+  } else if (overallAverage >= 2.00) {
+    level = "practitioner";
+    levelLabel = "Practitioner";
+  } else {
+    level = "learner";
+    levelLabel = "Learner";
+  }
 
   return {
-    total: Math.round(total),
+    total: overallAverage, // This represents your overall average score (e.g., 3.12)
     competencyBreakdown: breakdown,
-    level: band.level,
-    levelLabel: band.label,
-    track: band.track,
+    level,
+    levelLabel,
+    track: "default", // Adapt or map this to whatever your layout expects for 'track'
   };
 }

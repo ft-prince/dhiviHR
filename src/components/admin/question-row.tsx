@@ -11,17 +11,21 @@ export function QuestionRow({
   prompt,
   active,
   orderIndex,
-  competency,
+  streamId,
+  competencyId,
   options,
   competencies,
+  streams
 }: {
   id: string;
   prompt: string;
   active: boolean;
   orderIndex: number;
-  competency: string;
+  streamId: string;
+  competencyId : string;
   options: { id: string; label: string; weight: number }[];
-  competencies?: { slug: string; label: string }[];
+  competencies?: { id:string; slug: string; label: string }[];
+  streams?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -78,8 +82,10 @@ export function QuestionRow({
       {editing && (
         <div className="mt-4 border-t border-border pt-4">
           <QuestionForm
-            initial={{ id, competency, prompt, options, orderIndex, active }}
+            streamId = {streamId}
+            initial={{ id, streamId, competencyId, prompt, options, orderIndex, active,  }}
             competencies={competencies}
+            streams={streams}
             onDone={() => { setEditing(false); router.refresh(); }}
           />
         </div>

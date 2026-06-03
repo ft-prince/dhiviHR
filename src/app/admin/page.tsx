@@ -4,7 +4,7 @@ import { KpiCard } from "@/components/admin/kpi-card";
 import { DataTable } from "@/components/admin/data-table";
 import { getPlatformStats, getRecentAttempts, getRecentSignups, getLevelDistribution } from "@/lib/admin/stats";
 import { Users, BookOpenCheck, IndianRupee, GraduationCap, TrendingUp } from "lucide-react";
-import { READINESS_BANDS, fmtDate } from "@/lib/utils";
+import { READINESS_LEVEL, fmtDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -69,12 +69,12 @@ export default async function AdminOverviewPage() {
             </Link>
           </div>
           <div className="space-y-4">
-            {READINESS_BANDS.map((b) => {
-              const c = distMap.get(b.level) ?? 0;
+            {READINESS_LEVEL.map((l) => {
+              const c = distMap.get(l.level) ?? 0;
               return (
-                <div key={b.level}>
+                <div key={l.level}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium text-ink">{b.label}</span>
+                    <span className="font-medium text-ink">{l.label}</span>
                     <span className="text-ink-soft tabular-nums">
                       {c} {c === 1 ? "candidate" : "candidates"}
                     </span>
@@ -143,7 +143,7 @@ export default async function AdminOverviewPage() {
                 header: "Level",
                 render: (r) =>
                   r.level
-                    ? READINESS_BANDS.find((b) => b.level === r.level)?.label
+                    ? READINESS_LEVEL.find((l) => l.level === r.level)?.label
                     : "—",
               },
               { key: "when", header: "When", render: (r) => fmtDate(r.startedAt) },

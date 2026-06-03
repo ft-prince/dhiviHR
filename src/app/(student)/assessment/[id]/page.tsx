@@ -7,9 +7,15 @@ import { getActiveQuestionsAction } from "@/lib/assessment/actions";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { AssessmentRunner } from "@/components/assessment/assessment-runner";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AssessmentRunPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  console.log("=== SERVER: RUNNING ASSESSMENT PAGE FOR ID ===", id);
+
   const session = await auth();
+  console.log("=== SERVER: SESSION USER ID ===", session?.user?.id);
   if (!session?.user?.id) redirect(`/login?callbackUrl=/assessment/${id}`);
 
   const attempt = await db
@@ -17,10 +23,22 @@ export default async function AssessmentRunPage({ params }: { params: Promise<{ 
     .from(assessments)
     .where(and(eq(assessments.id, id), eq(assessments.userId, session.user.id)))
     .limit(1);
-  if (!attempt[0]) notFound();
-  if (attempt[0].status === "completed") redirect(`/report/${id}`);
+    
+  console.log("=== SERVER: ASSESSMENT ATTEMPT ROW FOUND ===", attempt[0]);
 
+  if (!attempt[0]) {
+    console.log("=== SERVER: RENDERING 404 NOT FOUND (No matching assessment record) ===");
+    notFound();
+  }
+  
+  if (attempt[0].status === "completed") {
+    console.log("=== SERVER: REDIRECTING BECAUSE STATUS IS COMPLETED ===");
+    redirect(`/report/${id}`);
+  }
+
+  console.log("=== SERVER: TRIGGERING getActiveQuestionsAction ===");
   const qs = await getActiveQuestionsAction();
+  console.log("=== SERVER: RETURNED QUESTIONS LENGTH ===", qs?.length);
 
   return (
     <>
@@ -32,7 +50,7 @@ export default async function AssessmentRunPage({ params }: { params: Promise<{ 
             id: q.id,
             competency: q.competency,
             prompt: q.prompt,
-            options: q.options as { id: string; label: string; weight: number }[],
+            options: (q.options || []) as { id: string; label: string; weight: number }[],
           }))}
         />
       </main>

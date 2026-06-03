@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
-import { COMPETENCY_LABELS, type Competency } from "@/lib/scoring";
+
 
 Font.register({
   family: "Roboto",
@@ -95,12 +95,12 @@ export function ReportDocument({ data }: { data: ReportData }) {
 
         <View style={styles.section}>
           <Text style={styles.label}>Competency Breakdown</Text>
-          {(Object.keys(data.breakdown) as Competency[]).map((c) => {
+          {(Object.keys(data.breakdown)).map((c) => {
             const score = data.breakdown[c] ?? 0;
             return (
               <View key={c} style={styles.competency}>
                 <View style={styles.row}>
-                  <Text>{COMPETENCY_LABELS[c] ?? c}</Text>
+                  <Text>{c}</Text>
                   <Text>{score.toFixed(1)} / 20</Text>
                 </View>
                 <View style={styles.barTrack}>

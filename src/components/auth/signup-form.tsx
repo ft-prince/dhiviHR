@@ -7,7 +7,8 @@ import { Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { signupAction, studentSignupAction } from "@/lib/auth/actions";
 
-export function SignupForm({ variant = "public" }: { variant?: "public" | "student" }) {
+
+export function SignupForm({ variant = "public", streams = [], }: { variant?: "public" | "student", streams: { id: string; name: string }[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -49,6 +50,20 @@ export function SignupForm({ variant = "public" }: { variant?: "public" | "stude
       <div>
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required />
+      </div>
+      <div>
+        <Label htmlFor="stream">Stream</Label>
+        <select
+          id="stream"
+          name="stream"
+          required
+          defaultValue=""
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="" disabled>Select a stream...</option>
+            {streams.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
       </div>
       <div>
         <Label htmlFor="phone">Phone (optional)</Label>

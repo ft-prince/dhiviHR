@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { COMPETENCY_LABELS, type Competency } from "@/lib/scoring";
 import { submitAssessmentAction } from "@/lib/assessment/actions";
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,7 +53,7 @@ export function AssessmentRunner({ assessmentId, questions }: { assessmentId: st
     <div>
       <div className="mb-6">
         <div className="flex justify-between text-xs font-medium text-ink-muted mb-2">
-          <span>{COMPETENCY_LABELS[q.competency as Competency] ?? q.competency}</span>
+          <span>{q.competency}</span>
           <span>Question {idx + 1} of {questions.length}</span>
         </div>
         <div className="h-2 rounded-full bg-brand-50 overflow-hidden">

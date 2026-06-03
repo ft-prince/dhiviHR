@@ -3,6 +3,7 @@ import { z } from "zod";
 export const signupSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  stream: z.string().min(2).optional(),
   password: z.string().min(8),
   phone: z.string().optional(),
 });

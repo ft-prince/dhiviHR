@@ -17,7 +17,7 @@ export default async function AdminCompetenciesPage() {
       weight: competencies.weight,
       active: competencies.active,
       orderIndex: competencies.orderIndex,
-      questionCount: sql<number>`(SELECT count(*)::int FROM questions WHERE questions.competency = competencies.slug)`,
+      questionCount: sql<number>`(SELECT count(*)::int FROM questions WHERE questions.competency_id = competencies.id)`,
     })
     .from(competencies)
     .orderBy(asc(competencies.orderIndex), asc(competencies.slug));

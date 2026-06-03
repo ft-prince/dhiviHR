@@ -3,15 +3,23 @@ import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { assessments, scores } from "@/lib/db/schema";
+import { users, streams, assessments, scores } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
-import { READINESS_BANDS, fmtDate } from "@/lib/utils";
+import { READINESS_LEVEL, fmtDate } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard");
+
+  const userDetail = await db.select({
+    streamName: streams.name,
+  }).from(users)
+  .leftJoin(streams, eq(streams.id, users.streamId))
+  .where(eq(users.id, session.user.id))
+  .limit(1)
+  .then((r) => r[0]);
 
   const attempts = await db
     .select({
@@ -29,7 +37,7 @@ export default async function DashboardPage() {
     .orderBy(desc(assessments.startedAt));
 
   const latest = attempts.find((a) => a.status === "completed");
-  const band = latest ? READINESS_BANDS.find((b) => b.level === latest.level) : null;
+  const band = latest ? READINESS_LEVEL.find((b) => b.level === latest.level) : null;
   const user = session.user as { name?: string | null; email?: string | null; role?: string };
 
   return (
@@ -67,7 +75,7 @@ export default async function DashboardPage() {
               <>
                 <div className="mt-2 display-headline text-2xl sm:text-3xl">{band.label}</div>
                 <div className="mt-1 text-sm text-ink-muted">
-                  Score: <b className="text-ink">{latest.total} / 100</b>
+                  Score: <b className="text-ink">{latest.total} / 4</b>
                 </div>
                 <div className="mt-4 inline-flex rounded-pill bg-brand-50 text-brand-700 px-4 py-1.5 text-xs font-bold uppercase tracking-wider">
                   {latest.track}
@@ -109,6 +117,10 @@ export default async function DashboardPage() {
               <div>
                 <dt className="text-ink-muted">Email</dt>
                 <dd className="font-medium text-ink mt-0.5 break-all">{user.email ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-ink-muted">Stream</dt>
+                <dd className="font-medium text-ink mt-0.5">{userDetail?.streamName ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-ink-muted">Role</dt>
@@ -157,7 +169,7 @@ export default async function DashboardPage() {
                       </td>
                       <td className="px-4 py-3 font-medium">{a.total ?? "—"}</td>
                       <td className="px-4 py-3">
-                        {a.level ? READINESS_BANDS.find((b) => b.level === a.level)?.label : "—"}
+                        {a.level ? READINESS_LEVEL.find((b) => b.level === a.level)?.label : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {a.status === "completed" ? (

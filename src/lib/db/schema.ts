@@ -10,6 +10,7 @@ import {
   pgEnum,
   uniqueIndex,
   index,
+  real,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -34,19 +35,13 @@ export const paymentStatus = pgEnum("payment_status", [
 ]);
 
 export const readinessLevel = pgEnum("readiness_level", [
-  "emerging",
-  "developing",
-  "industry_ready",
-  "high_impact",
+  "learner", "practitioner", "accelerator", "future_ready"
 ]);
 
-// Kept for DB enum compatibility; new code uses the competencies table instead.
-export const competencyEnum = pgEnum("competency", [
-  "communication_confidence",
-  "problem_solving",
-  "teamwork_leadership",
-  "initiative_growth",
-  "interview_readiness",
+export const competencyGapEnum = pgEnum("competency_gap_enum", [
+  "critical_gap",
+  "development_gap",
+  "strength",
 ]);
 
 export const competencies = pgTable("competencies", {
@@ -66,6 +61,7 @@ export const users = pgTable("users", {
   name: text("name"),
   email: text("email").notNull().unique(),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
+  streamId: uuid("stream_id").references(() => streams.id, {onDelete: "set null"}),
   passwordHash: text("password_hash"),
   image: text("image"),
   role: userRole("role").notNull().default("student"),
@@ -149,6 +145,19 @@ export const colleges = pgTable("colleges", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const streams = pgTable("streams", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sections = pgTable("sections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+});
+
 export const accessCodeBatches = pgTable("access_code_batches", {
   id: uuid("id").primaryKey().defaultRandom(),
   collegeId: uuid("college_id").notNull().references(() => colleges.id, { onDelete: "cascade" }),
@@ -175,7 +184,9 @@ export const accessCodes = pgTable(
 
 export const questions = pgTable("questions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  competency: text("competency").notNull(),
+  streamId: uuid("stream_id").notNull().references(() => streams.id, { onDelete: "restrict" }),
+  sectionId: uuid("section_id").references(() => sections.id, { onDelete: "set null" }),
+  competencyId: uuid("competency_id").notNull().references(() => competencies.id, { onDelete: "restrict" }),
   prompt: text("prompt").notNull(),
   /** [{ id, label, weight }] weight 0..4 */
   options: jsonb("options").notNull(),
@@ -189,7 +200,9 @@ export const questions = pgTable("questions", {
 export const assessments = pgTable("assessments", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  streamId: uuid("stream_id").notNull().references(() => streams.id, { onDelete: "restrict" }),
   status: assessmentStatus("status").notNull().default("in_progress"),
+  reportJson: jsonb("report_json"),
   startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
 }, (t) => ({
@@ -213,12 +226,19 @@ export const responses = pgTable("responses", {
 export const scores = pgTable("scores", {
   id: uuid("id").primaryKey().defaultRandom(),
   assessmentId: uuid("assessment_id").notNull().unique().references(() => assessments.id, { onDelete: "cascade" }),
-  total: integer("total").notNull(),
+  total: real("total").notNull(),
   level: readinessLevel("level").notNull(),
-  breakdown: jsonb("breakdown").notNull(),
   track: text("track").notNull(),
   reportPdfKey: text("report_pdf_key"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const score_competencies = pgTable("score_competencies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  scoreId: uuid("score_id").notNull().references(() => scores.id, { onDelete: "cascade" }),
+  competencyId: uuid("competency_id").notNull().references(() => competencies.id, { onDelete: "cascade" }),
+  average: real("average").notNull(),
+  gap: competencyGapEnum("gap").notNull(),
 });
 
 export const payments = pgTable("payments", {
@@ -256,6 +276,21 @@ export const collegesRelations = relations(colleges, ({ many, one }) => ({
   template: one(formTemplates, { fields: [colleges.templateId], references: [formTemplates.id] }),
 }));
 
+export const streamRelations = relations(streams, ({ many }) => ({
+  templates: many(formTemplates),
+  sections: many(sections),
+  questions: many(questions),
+  assessments: many(assessments),
+  users: many(users),
+}));
+
+export const questionsRelations = relations(questions, ({ one }) => ({
+  stream: one(streams, { fields: [questions.streamId], references: [streams.id] }),
+  section: one(sections, { fields: [questions.sectionId], references: [sections.id] }),
+  competency: one(competencies, {fields: [questions.competencyId], references: [competencies.id]}),
+  createdByUser: one(users, { fields: [questions.createdBy], references: [users.id] }),
+}));
+
 export const formTemplatesRelations = relations(formTemplates, ({ many }) => ({
   templateQuestions: many(templateQuestions),
   colleges: many(colleges),
@@ -268,6 +303,7 @@ export const templateQuestionsRelations = relations(templateQuestions, ({ one })
 
 export const assessmentsRelations = relations(assessments, ({ one, many }) => ({
   user: one(users, { fields: [assessments.userId], references: [users.id] }),
+  stream: one(streams, { fields: [assessments.streamId], references: [streams.id] }),
   responses: many(responses),
   score: one(scores, { fields: [assessments.id], references: [scores.assessmentId] }),
 }));

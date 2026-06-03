@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { upsertQuestionAction } from "@/lib/admin/actions";
-import { COMPETENCY_LABELS, COMPETENCIES } from "@/lib/scoring";
 
 interface Option {
   id: string;
@@ -14,24 +13,29 @@ interface Option {
 }
 
 type QuestionData = {
-  competency: string;
+  streamId: string;
+  sectionId?: string | null;
+  competencyId: string;
   prompt: string;
   options: Option[];
-  orderIndex: number;
   active: boolean;
+  orderIndex: number;
 };
 
 interface CompetencyOption {
+  id: string;
   slug: string;
   label: string;
 }
 
 interface QuestionFormProps {
+  streamId?: string; 
   initial?: { id: string } & QuestionData;
   /** Override the save action — used when creating directly from a template page */
   createAction?: (data: QuestionData) => Promise<{ ok: boolean; error?: string }>;
   onDone?: () => void;
   /** Dynamic competency list from DB — falls back to hardcoded list if omitted */
+  streams?: { id: string; name: string }[];
   competencies?: CompetencyOption[];
 }
 
@@ -39,23 +43,22 @@ function generateOptionId() {
   return Math.random().toString(36).slice(2, 7);
 }
 
-export function QuestionForm({ initial, createAction, onDone, competencies: competenciesProp }: QuestionFormProps) {
+export function QuestionForm({ initial, createAction, onDone, streams, competencies }: QuestionFormProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const competencyOptions: CompetencyOption[] = competenciesProp && competenciesProp.length > 0
-    ? competenciesProp
-    : COMPETENCIES.map((c) => ({ slug: c, label: COMPETENCY_LABELS[c] ?? c }));
-
-  const [competency, setCompetency] = useState<string>(initial?.competency ?? competencyOptions[0]?.slug ?? "");
+  const [streamId, setStreamId] = useState<string>(initial?.streamId ?? streams?.[0]?.id ?? "");
+  const [sectionId, setSectionId] = useState<string | null>(null);
+  const [competencyId, setCompetencyId] = useState<string>(initial?.competencyId ?? competencies?.[0]?.id ?? "");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
   const [orderIndex, setOrderIndex] = useState(initial?.orderIndex ?? 0);
   const [active, setActive] = useState(initial?.active ?? true);
   const [options, setOptions] = useState<Option[]>(
     initial?.options ?? [
-      { id: generateOptionId(), label: "", weight: 0 },
+      { id: generateOptionId(), label: "", weight: 1 },
       { id: generateOptionId(), label: "", weight: 2 },
+      { id: generateOptionId(), label: "", weight: 3 },
       { id: generateOptionId(), label: "", weight: 4 },
     ],
   );
@@ -79,7 +82,11 @@ export function QuestionForm({ initial, createAction, onDone, competencies: comp
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const data: QuestionData = { competency, prompt, options, orderIndex, active };
+    if(prompt.trim().length<5){
+      setError("Prompt must be at least 5 characters long.");
+      return;
+    }
+    const data: QuestionData = { streamId, sectionId, competencyId, prompt, options, active, orderIndex };
     start(async () => {
       const result = createAction
         ? await createAction(data)
@@ -97,14 +104,30 @@ export function QuestionForm({ initial, createAction, onDone, competencies: comp
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-semibold text-ink-soft">Competency</label>
+          <label className="text-xs font-semibold text-ink-soft">Stream</label>
           <select
-            value={competency}
-            onChange={(e) => setCompetency(e.target.value)}
+            value={streamId}
+            onChange={(e) => setStreamId(e.target.value)}
             className="mt-1 w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
-            {competencyOptions.map((c) => (
-              <option key={c.slug} value={c.slug}>
+            <option value="">Select a stream</option>
+            {streams?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-ink-soft">Competency</label>
+          <select
+            value={competencyId}
+            onChange={(e) => setCompetencyId(e.target.value)}
+            className="mt-1 w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            <option value="">Select a competency</option>
+            {competencies?.map((c) => (
+              <option key={c.id} value={c.id}>
                 {c.label}
               </option>
             ))}

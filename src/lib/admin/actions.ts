@@ -16,6 +16,7 @@ import {
   formTemplates,
   templateQuestions,
   competencies,
+  streams,
 } from "@/lib/db/schema";
 import { audit } from "@/lib/audit";
 import { auth } from "@/lib/auth";
@@ -107,6 +108,61 @@ export async function deleteCollegeAction(id: string) {
   return { ok: true as const };
 }
 
+//───Streams ────────────────────────────────────────────────────────────────────
+
+const streamSchema = z.object({
+  name: z.string().min(2),
+});
+
+export async function createStreamAction(input: z.infer<typeof streamSchema>) {
+  const me = await requireAdmin();
+  const parsed = streamSchema.safeParse(input);
+  if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
+  const baseSlug = slugify(parsed.data.name);
+  const slug = `${baseSlug}-${code().slice(0, 4).toLowerCase()}`;
+  const [row] = await db
+    .insert(streams)
+    .values({ name: parsed.data.name, slug })
+    .returning();
+  await audit({ actorId: me.id, action: "stream.create", target: row.id, meta: { name: row.name } });
+  revalidatePath("/admin/streams");
+  return { ok: true as const, id: row.id };
+}
+
+const streamUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(2),
+});
+
+export async function updateStreamAction(input: z.infer<typeof streamUpdateSchema>) {
+  const me = await requireAdmin();
+  const parsed = streamUpdateSchema.safeParse(input);
+  if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
+  const { id, name } = parsed.data;
+  await db
+    .update(streams)
+    .set({ name, updatedAt: new Date() })
+    .where(eq(streams.id, id));
+  await audit({ actorId: me.id, action: "stream.update", target: id, meta: { name } });
+  revalidatePath("/admin/streams");
+  return { ok: true as const };
+}
+
+export async function deleteStreamAction(id: string) {
+  const me = await requireAdmin();
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(streams)
+    .where(eq(streams.id, id));
+  if (count === 0) {
+    return { ok: false as const, error: "Stream not found" };
+  }
+  await db.delete(streams).where(eq(streams.id, id));
+  await audit({ actorId: me.id, action: "stream.delete", target: id });
+  revalidatePath("/admin/streams");
+  return { ok: true as const };
+}
+
 // ─── Access Code Batches ──────────────────────────────────────────────────────
 
 const batchSchema = z.object({
@@ -158,7 +214,9 @@ export async function deleteCodeBatchAction(batchId: string) {
 
 const questionSchema = z.object({
   id: z.string().uuid().optional(),
-  competency: z.string().min(1),
+  streamId: z.string().uuid(),
+  sectionId: z.string().uuid().optional().nullable(),
+  competencyId: z.string().uuid(),
   prompt: z.string().min(5),
   options: z
     .array(
@@ -170,8 +228,8 @@ const questionSchema = z.object({
     )
     .min(2)
     .max(6),
-  orderIndex: z.coerce.number().int().min(0).default(0),
   active: z.boolean().default(true),
+  orderIndex: z.coerce.number().int().min(0).default(0),
 });
 
 export async function upsertQuestionAction(input: z.infer<typeof questionSchema>) {
@@ -179,15 +237,20 @@ export async function upsertQuestionAction(input: z.infer<typeof questionSchema>
   const parsed = questionSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
+  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
+  if (!data.competencyId) return { ok: false as const, error: "Competency is required" };
+
   if (data.id) {
     await db
       .update(questions)
       .set({
-        competency: data.competency,
+        streamId: data.streamId,
+        sectionId: data.sectionId ?? null,
+        competencyId: data.competencyId,
         prompt: data.prompt,
         options: data.options,
-        orderIndex: data.orderIndex,
         active: data.active,
+        orderIndex: data.orderIndex,
         updatedAt: new Date(),
       })
       .where(eq(questions.id, data.id));
@@ -198,7 +261,9 @@ export async function upsertQuestionAction(input: z.infer<typeof questionSchema>
     const [row] = await db
       .insert(questions)
       .values({
-        competency: data.competency,
+        streamId: data.streamId,
+        sectionId: data.sectionId ?? null,
+        competencyId: data.competencyId,
         prompt: data.prompt,
         options: data.options,
         orderIndex: data.orderIndex,
@@ -220,10 +285,16 @@ export async function createAndAddToTemplateAction(
   const parsed = questionSchema.omit({ id: true }).safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
+  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
+  if (!data.sectionId) return { ok: false as const, error: "Section is required" };
+  if (!data.competencyId) return { ok: false as const, error: "Competency is required" };
+
   const [row] = await db
     .insert(questions)
     .values({
-      competency: data.competency,
+      streamId: data.streamId,
+      sectionId: data.sectionId,
+      competencyId: data.competencyId,
       prompt: data.prompt,
       options: data.options,
       orderIndex: data.orderIndex,
@@ -254,11 +325,15 @@ export async function forkAndUpdateTemplateQuestionAction(
   const parsed = questionSchema.omit({ id: true }).safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
+  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
+  if (!data.sectionId) return { ok: false as const, error: "Section is required" };
 
   const [newQ] = await db
     .insert(questions)
     .values({
-      competency: data.competency,
+      streamId: data.streamId,
+      sectionId: data.sectionId,
+      competencyId: data.competencyId,
       prompt: data.prompt,
       options: data.options,
       orderIndex: data.orderIndex,
@@ -561,7 +636,7 @@ export async function deleteCompetencyAction(id: string) {
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(questions)
-    .where(eq(questions.competency, sql`(SELECT slug FROM competencies WHERE id = ${id})`));
+    .where(eq(questions.competencyId, id));
   if (count > 0) return { ok: false as const, error: `Cannot delete — ${count} question(s) use this competency.` };
   await db.delete(competencies).where(eq(competencies.id, id));
   await audit({ actorId: me.id, action: "competency.delete", target: id });

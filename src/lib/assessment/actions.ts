@@ -7,33 +7,40 @@ import { db } from "@/lib/db";
 import {
   assessments,
   responses,
+  competencies,
   questions,
   scores,
   users,
   colleges,
   formTemplates,
   templateQuestions,
+  streams,
+  score_competencies,
 } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
-import { scoreAssessment, type Competency } from "@/lib/scoring";
+import { scoreAssessment} from "@/lib/scoring";
+import { generatePdfData } from "@/lib/report";
 
 type AssessmentQuestion = {
   id: string;
-  competency: string;
+  streamId: string;
+  competencyId: string;
   prompt: string;
-  options: unknown;
+  options: any;
   active: boolean;
   orderIndex: number;
 };
 
 const QUESTION_FIELDS = {
   id: questions.id,
-  competency: questions.competency,
+  streamId: questions.streamId,
+  competencyId: questions.competencyId,
+  competency: competencies.label,
   prompt: questions.prompt,
   options: questions.options,
   active: questions.active,
   orderIndex: questions.orderIndex,
-} as const;
+};
 
 /**
  * Resolve which template applies to a user:
@@ -60,8 +67,10 @@ async function resolveTemplateIdForUser(userId: string): Promise<string | null> 
   const [def] = await db
     .select({ id: formTemplates.id })
     .from(formTemplates)
-    .where(eq(formTemplates.isDefault, true))
+    .innerJoin(templateQuestions, eq(templateQuestions.templateId, formTemplates.id)) 
+    .where(and(eq(formTemplates.isDefault, true), eq(templateQuestions.active, true)))
     .limit(1);
+
   return def?.id ?? null;
 }
 
@@ -71,17 +80,29 @@ async function resolveTemplateIdForUser(userId: string): Promise<string | null> 
  * question bank) are returned — no global questions are merged in. Falls back to
  * all active questions only when no template is configured anywhere.
  */
-async function resolveAssessmentQuestions(userId: string): Promise<AssessmentQuestion[]> {
+async function resolveAssessmentQuestions(userId: string): Promise<any[]> {
   const templateId = await resolveTemplateIdForUser(userId);
 
   if (!templateId) {
-    return db.select(QUESTION_FIELDS).from(questions).where(eq(questions.active, true));
+    return db
+      .select(QUESTION_FIELDS)
+      .from(questions)
+      .innerJoin(users, eq(users.streamId, questions.streamId))
+      .innerJoin(competencies, eq(competencies.id, questions.competencyId)) // 👈 Add this join loop
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(questions.active, true)
+        )
+      )
+      .orderBy(asc(questions.orderIndex));
   }
 
   return db
     .select(QUESTION_FIELDS)
     .from(templateQuestions)
     .innerJoin(questions, eq(templateQuestions.questionId, questions.id))
+    .innerJoin(competencies, eq(competencies.id, questions.competencyId)) // 👈 Add this join loop here too
     .where(
       and(
         eq(templateQuestions.templateId, templateId),
@@ -112,11 +133,15 @@ async function requireUser() {
 
 export async function startAssessmentAction() {
   const user = await requireUser();
+  const dbUser = await db.select({streamId: users.streamId}).from(users).where(eq(users.id, user.id)).limit(1);
+  
+  const streamId = dbUser[0]?.streamId;
+  if (!streamId) throw new Error("User stream not set. Contact administrator.");
   // Reuse the most recent in_progress attempt for this user, else create.
   const open = await db
     .select()
     .from(assessments)
-    .where(and(eq(assessments.userId, user.id), eq(assessments.status, "in_progress")))
+    .where(and(eq(assessments.userId, user.id),eq(assessments.streamId, streamId),eq(assessments.status, "in_progress")))
     .orderBy(desc(assessments.startedAt))
     .limit(1);
   const attempt =
@@ -124,7 +149,7 @@ export async function startAssessmentAction() {
     (
       await db
         .insert(assessments)
-        .values({ userId: user.id, status: "in_progress" })
+        .values({ userId: user.id, streamId, status: "in_progress" })
         .returning()
     )[0];
   redirect(`/assessment/${attempt.id}`);
@@ -132,14 +157,32 @@ export async function startAssessmentAction() {
 
 export async function submitAssessmentAction(input: z.infer<typeof submitSchema>) {
   const user = await requireUser();
+  const dbUserData = await db.select({
+    streamId: users.streamId,
+    email: users.email,
+    name: users.name,
+    streamName: streams.name,
+  }).from(users)
+  .leftJoin(streams, eq(streams.id, users.streamId))
+  .where(eq(users.id, user.id)).limit(1);
+
+  const userData = dbUserData[0];
+  if(!userData || !userData.streamId){
+    throw new Error("User stream not set or profile invalid. Contact administrator."); 
+  }
+
   const parsed = submitSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Invalid payload" };
   const { assessmentId, answers } = parsed.data;
 
+  const compLabels = await db.select({ id: competencies.id, label: competencies.label }).from(competencies);
+  const labelMap = Object.fromEntries(compLabels.map(c => [c.id, c.label]));
+
+  
   const attempt = await db
     .select()
     .from(assessments)
-    .where(and(eq(assessments.id, assessmentId), eq(assessments.userId, user.id)))
+    .where(and(eq(assessments.id, assessmentId), eq(assessments.streamId, userData.streamId), eq(assessments.userId, user.id)))
     .limit(1);
   if (!attempt[0]) return { ok: false as const, error: "Assessment not found" };
   if (attempt[0].status === "completed") return { ok: false as const, error: "Already submitted" };
@@ -150,7 +193,7 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
   const qs = await resolveAssessmentQuestions(user.id);
   const qMap = new Map(qs.map((q) => [q.id, q]));
 
-  const scored: { competency: Competency; weight: number; max: number; optionId: string; questionId: string }[] = [];
+  const scored: { competency: string; weight: number; max: number; optionId: string; questionId: string }[] = [];
   for (const a of answers) {
     const q = qMap.get(a.questionId);
     if (!q) continue;
@@ -160,7 +203,7 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
     if (!picked) continue;
     const max = Math.max(...opts.data.map((o) => o.weight), 0);
     scored.push({
-      competency: q.competency as Competency,
+      competency: q.competencyId as string,
       weight: picked.weight,
       max,
       optionId: a.optionId,
@@ -186,25 +229,50 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
     scored.map((s) => ({ competency: s.competency, weight: s.weight, max: s.max })),
   );
 
+  const readableBreakdown = Object.fromEntries(
+    Object.entries(result.competencyBreakdown).map(([id, detail]) => [labelMap[id] ?? id, detail])
+  );
+
+  const readableResult = { ...result, competencyBreakdown: readableBreakdown };
+  const pdf_data = await generatePdfData(readableResult, userData.name || "Candidate", userData.email || "User email", userData.streamName || "Stream");
+
   // Upsert score row.
   await db.delete(scores).where(eq(scores.assessmentId, assessmentId));
-  await db.insert(scores).values({
+  const [score] = await db.insert(scores).values({
     assessmentId,
     total: Math.round(result.total),
     level: result.level as never,
-    breakdown: result.competencyBreakdown,
     track: result.track,
-  });
+  }).returning();
+
+  const competencyRows = Object.entries(result.competencyBreakdown).map(([compId, detail]) => ({
+    scoreId: score.id,
+    competencyId: compId,
+    average: detail.average,
+    gap: detail.gap as never,
+  }));
+
+  await db.insert(score_competencies).values(competencyRows);
 
   await db
     .update(assessments)
-    .set({ status: "completed", completedAt: new Date() })
+    .set({ status: "completed", completedAt: new Date(), reportJson: pdf_data || null })
     .where(eq(assessments.id, assessmentId));
 
   return { ok: true as const, assessmentId };
 }
 
 export async function getActiveQuestionsAction() {
-  const user = await requireUser();
-  return resolveAssessmentQuestions(user.id);
+  try {
+    console.log("=== ACTION: ENTERED getActiveQuestionsAction ===");
+    const user = await requireUser();
+    console.log("=== ACTION: requireUser FOUND ===", user?.id);
+    
+    const questionsList = await resolveAssessmentQuestions(user.id);
+    console.log("=== ACTION: resolveAssessmentQuestions FOUND ===", questionsList?.length);
+    return questionsList;
+  } catch (err) {
+    console.error("=== ACTION: CRASHED SILENTLY ===", err);
+    return [];
+  }
 }

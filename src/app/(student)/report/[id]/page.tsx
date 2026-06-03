@@ -1,41 +1,67 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { and, eq } from "drizzle-orm";
+import { and, eq, asc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { assessments, scores, users as usersT } from "@/lib/db/schema";
+import { assessments, scores, users as usersT, competencies, score_competencies } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
 import { Paywall } from "@/components/payment/paywall";
 import { isAssessmentPaid } from "@/lib/payment/actions";
-import { COMPETENCY_LABELS, type Competency } from "@/lib/scoring";
-import { READINESS_BANDS } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { READINESS_LEVEL } from "@/lib/utils";
+import DownloadButton from "@/components/assessment/downloadButton";
+
+export const dynamic = "force-dynamic";
+
+interface CompetencyDetail {
+  average: number;
+  gap: "critical_gap" | "development_gap" | "strength";
+}
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/report/${id}`);
 
-  const row = await db
-    .select({
-      assessment: assessments,
-      score: scores,
-      user: usersT,
-    })
-    .from(assessments)
-    .leftJoin(scores, eq(scores.assessmentId, assessments.id))
-    .leftJoin(usersT, eq(usersT.id, assessments.userId))
-    .where(and(eq(assessments.id, id), eq(assessments.userId, session.user.id)))
-    .limit(1);
+  const [row, dbCompetencies] = await Promise.all([
+    db
+      .select({
+        assessment: assessments,
+        score: scores,
+        score_competencies: score_competencies,
+        user: usersT,
+      })
+      .from(assessments)
+      .leftJoin(scores, eq(scores.assessmentId, assessments.id))
+      .leftJoin(score_competencies, eq(score_competencies.scoreId, scores.id))
+      .leftJoin(usersT, eq(usersT.id, assessments.userId))
+      .where(and(eq(assessments.id, id), eq(assessments.userId, session.user.id)))
+      ,
+    db
+      .select({ id: competencies.id, label: competencies.label })
+      .from(competencies)
+      .orderBy(asc(competencies.orderIndex))
+  ]);
 
   if (!row[0]) notFound();
   const { assessment, score, user } = row[0];
   if (assessment.status !== "completed" || !score) redirect(`/assessment/${id}`);
 
   const paid = await isAssessmentPaid(id, session.user.id);
-  const band = READINESS_BANDS.find((b) => b.level === score.level)!;
-  const breakdown = (score.breakdown as Record<Competency, number>) ?? {};
+  const band = READINESS_LEVEL.find((b) => b.level === score.level)!;
+  
+  // Cast the breakdown object coming from JSONB
+  const breakdownData: Record<string, CompetencyDetail> = {};
+  for (const r of row) {
+    if (r.score_competencies?.competencyId) {
+      breakdownData[r.score_competencies.competencyId] = {
+        average: r.score_competencies.average,
+        gap: r.score_competencies.gap,
+      };
+    }
+  }
+  // Transform DB competencies into a tidy lookup map: { [id]: "Label Name" }
+  const labelMap = Object.fromEntries(dbCompetencies.map((c) => [c.id, c.label]));
 
   return (
     <>
@@ -43,7 +69,9 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       <main className="container-narrow pt-24 sm:pt-28 pb-12">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="display-headline text-3xl sm:text-4xl">Your Readiness Report</h1>
-          <Link href="/dashboard" className="self-start sm:self-auto"><Button variant="ghost">Back to dashboard</Button></Link>
+          <Link href="/dashboard" className="self-start sm:self-auto">
+            <Button variant="ghost">Back to dashboard</Button>
+          </Link>
         </div>
 
         {!paid ? (
@@ -65,7 +93,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
           <FullReport
             total={score.total}
             band={band}
-            breakdown={breakdown}
+            breakdown={breakdownData}
+            labelMap={labelMap}
             track={score.track}
             assessmentId={id}
           />
@@ -79,59 +108,91 @@ function FullReport({
   total,
   band,
   breakdown,
+  labelMap,
   track,
   assessmentId,
 }: {
   total: number;
-  band: (typeof READINESS_BANDS)[number];
-  breakdown: Record<Competency, number>;
+  band: (typeof READINESS_LEVEL)[number];
+  breakdown: Record<string, CompetencyDetail>;
+  labelMap: Record<string, string>;
   track: string;
   assessmentId: string;
 }) {
+  const getGapStyling = (gap: string) => {
+    switch (gap) {
+      case "strength": return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Strength" };
+      case "development_gap": return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Development Gap" };
+      default: return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Critical Gap" };
+    }
+  };
   return (
     <div className="mt-8 sm:mt-10">
       <div className="grid md:grid-cols-3 gap-5">
         <div className="md:col-span-2 rounded-2xl border border-border bg-white p-6 sm:p-8 shadow-soft">
-          <div className="text-xs font-bold uppercase tracking-widest text-brand-600">Total Score</div>
-          <div className="mt-2 display-headline text-5xl sm:text-6xl text-brand-600">{total} <span className="text-ink-soft text-2xl sm:text-3xl">/ 100</span></div>
-          <div className="mt-4 display-headline text-2xl">{band.label}</div>
-          <div className="mt-3 inline-flex rounded-pill bg-brand-50 text-brand-700 px-4 py-1.5 text-xs font-bold uppercase tracking-wider">{track}</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-brand-600">Overall Score (Scale 1-4)</div>
+          <div className="mt-2 display-headline text-5xl sm:text-6xl text-brand-600">
+            {total} <span className="text-ink-soft text-2xl sm:text-3xl">/ 4.0</span>
+          </div>
+          <div className="mt-4 display-headline text-2xl">{band?.label || "Assessment Completed"}</div>
           <div className="mt-6">
-            <a href={`/api/report/${assessmentId}/pdf`} target="_blank" rel="noopener">
-              <Button><Download className="h-4 w-4" /> Download PDF</Button>
-            </a>
+            <DownloadButton assessmentId={assessmentId} />
           </div>
         </div>
         <div className="rounded-2xl border border-brand-100 bg-brand-50 p-6">
           <div className="text-xs font-bold uppercase tracking-widest text-brand-700">Next Step</div>
           <p className="mt-2 text-sm text-ink">
-            Based on your level, we recommend the <b>{track}</b>.
+            Based on your level, join us via WhatsApp to construct your professional path!
           </p>
-          <a href="https://wa.me/919780973238?text=Hi%2C%20I%20want%20to%20join%20the%20DHIVI%20HR%20workshop." target="_blank" rel="noopener" className="mt-4 inline-block">
+          <a href="https://wa.me/919780973238" target="_blank" rel="noopener noreferrer" className="mt-4 inline-block">
             <Button size="sm">Join via WhatsApp</Button>
           </a>
         </div>
       </div>
 
       <div className="mt-8 rounded-2xl border border-border bg-white p-6 sm:p-8">
-        <h2 className="display-headline text-xl sm:text-2xl">Competency Breakdown</h2>
-        <div className="mt-6 space-y-5">
-          {(Object.keys(COMPETENCY_LABELS) as Competency[]).map((c) => {
-            const v = breakdown[c] ?? 0;
-            return (
-              <div key={c}>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium">{COMPETENCY_LABELS[c]}</span>
-                  <span className="text-ink-muted">{v.toFixed(1)} / 20</span>
-                </div>
-                <div className="h-3 rounded-full bg-brand-50 overflow-hidden">
-                  <div className="h-full bg-brand-500 transition-all" style={{ width: `${(v / 20) * 100}%` }} />
-                </div>
-              </div>
-            );
-          })}
+  <h2 className="display-headline text-xl sm:text-2xl">Competency Gaps</h2>
+  <div className="mt-6 space-y-6">
+    {Object.entries(labelMap)
+    .filter(([compId]) => breakdown[compId])
+    .map(([compId, labelName]) => {
+      
+      // 1. SAFELY GRAB THE DATA:
+      // If breakdown[compId] is completely undefined, we fall back to a safe empty object.
+      const competencyRow = breakdown[compId] || {};
+      
+      // 2. APPLY DEFAULTS FOR NESTED METRICS:
+      // If average or gap don't exist on that object, default them cleanly.
+      const averageValue = typeof competencyRow === 'number' 
+        ? competencyRow  // Handles old database rows where breakdown was a raw number
+        : (competencyRow.average ?? 0); // Handles new nested object structural layout
+        
+      const gapStatus = competencyRow.gap ?? "critical_gap";
+      const styles = getGapStyling(gapStatus);
+
+      return (
+        <div key={compId} className="border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm mb-2 gap-1">
+            <span className="font-medium text-ink">{labelName}</span>
+            <div className="flex items-center gap-3">
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${styles.text}`}>
+                {styles.label}
+              </span>
+              {/* This is now completely safe from throwing a "Cannot read properties of undefined" error! */}
+              <span className="text-ink-muted font-mono font-medium">{averageValue.toFixed(2)} / 4.0</span>
+            </div>
+          </div>
+          <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className={`h-full transition-all ${styles.bar}`}
+              style={{ width: `${(averageValue / 4) * 100}%` }}
+            />
+          </div>
         </div>
-      </div>
+      );
+    })}
+  </div>
+</div>
     </div>
   );
 }

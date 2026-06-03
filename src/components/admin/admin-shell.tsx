@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Menu, X, LogOut, Home,
   LayoutDashboard, IndianRupee, Activity, ShieldCheck,
-  Server, BarChart3, Users, Building2, Ticket, ListChecks, FileText, Layers,
+  Server, BarChart3, Users, Building2, Ticket, ListChecks, FileText, Layers, BookOpen,
 } from "lucide-react";
 import { Wordmark } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -18,14 +18,15 @@ interface NavItem {
 }
 
 const ADMIN_NAV: NavItem[] = [
-  { href: "/admin",              label: "Dashboard",    icon: LayoutDashboard },
-  { href: "/admin/users",        label: "Users",        icon: Users           },
-  { href: "/admin/colleges",     label: "Colleges",     icon: Building2       },
-  { href: "/admin/codes",        label: "Codes",        icon: Ticket          },
-  { href: "/admin/questions",    label: "Questions",    icon: ListChecks      },
-  { href: "/admin/competencies", label: "Competencies", icon: Layers          },
-  { href: "/admin/templates",    label: "Templates",    icon: FileText        },
-  { href: "/admin/activity",     label: "Activity",     icon: BarChart3       },
+  { href: "/admin",           label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/admin/users",     label: "Users",      icon: Users           },
+  { href: "/admin/streams",   label: "Streams",    icon: BookOpen        },
+  { href: "/admin/colleges",  label: "Colleges",   icon: Building2       },
+  { href: "/admin/codes",     label: "Codes",      icon: Ticket          },
+  { href: "/admin/questions", label: "Questions",  icon: ListChecks      },
+  { href: "/admin/competencies", label: "Competencies", icon: Layers     },
+  { href: "/admin/templates",    label: "Templates",    icon: FileText    },
+  { href: "/admin/activity",  label: "Activity",   icon: BarChart3       },
 ];
 
 const SUPER_NAV: NavItem[] = [

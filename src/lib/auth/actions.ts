@@ -5,7 +5,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { users, accessCodes } from "@/lib/db/schema";
+import { users, accessCodes, streams } from "@/lib/db/schema";
 import { signIn, signOut } from "@/lib/auth";
 import { signupSchema, studentSignupSchema, loginSchema } from "./validators";
 import { rateLimit, rlKey } from "@/lib/rate-limit";
@@ -31,13 +31,19 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
+    stream: formData.get("stream") || undefined,
     password: formData.get("password"),
     phone: formData.get("phone") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { name, email, password, phone } = parsed.data;
+  const { name, email, password, phone, stream } = parsed.data;
+
+  if(!stream) return { ok: false, error: "Stream is required" };
+
+  const existingStream = await db.select().from(streams).where(eq(streams.id, stream)).limit(1);
+  if (!existingStream[0]) return { ok: false, error: "Invalid stream" };
 
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing[0]) return { ok: false, error: "An account with this email already exists" };
@@ -45,7 +51,7 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
   const passwordHash = await bcrypt.hash(password, 10);
   const [created] = await db
     .insert(users)
-    .values({ name, email, passwordHash, phone, role: "student" })
+    .values({ name, email, passwordHash, phone, role: "student", streamId: existingStream[0].id })
     .returning({ id: users.id });
 
   await audit({ actorId: created.id, action: "user.signup", target: created.id, meta: { role: "student" } });
@@ -67,6 +73,7 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
   const parsed = studentSignupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
+    stream: formData.get("stream") || undefined,
     password: formData.get("password"),
     phone: formData.get("phone") || undefined,
     accessCode: (formData.get("accessCode") as string)?.trim(),
@@ -74,7 +81,12 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { name, email, password, phone, accessCode } = parsed.data;
+  const { name, email, password, phone, accessCode, stream } = parsed.data;
+
+  if(!stream) return { ok: false, error: "Stream is required" };
+
+  const existingStream = await db.select().from(streams).where(eq(streams.id, stream)).limit(1);
+  if (!existingStream[0]) return { ok: false, error: "Invalid stream" };
 
   const code = await db
     .select()
@@ -96,6 +108,7 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
       phone,
       role: "college_student",
       collegeId: code[0].collegeId,
+      streamId: existingStream[0].id,
     })
     .returning({ id: users.id });
 

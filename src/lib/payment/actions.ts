@@ -11,6 +11,9 @@ import {
   verifyCheckoutSignature,
   REPORT_PRICE_PAISE,
 } from "@/lib/razorpay";
+import { sendReceiptEmail } from "../mail";
+import { generateReportPdfBuffer } from "../reports/generate";
+
 
 const verifySchema = z.object({
   assessmentId: z.string().uuid(),
@@ -72,6 +75,52 @@ export async function verifyPaymentAction(input: z.infer<typeof verifySchema>) {
       razorpaySignature: parsed.data.razorpaySignature,
     })
     .where(eq(payments.razorpayOrderId, parsed.data.razorpayOrderId));
+
+    try {
+    const targetEmail = session.user.email;
+    
+    if (targetEmail) {
+      // Look up corresponding assessment ID tied to this order transaction
+      // (Assuming your payments table stores the associated assessmentId)
+      const [paymentRecord] = await db
+        .select({ assessmentId: payments.assessmentId })
+        .from(payments)
+        .where(eq(payments.razorpayOrderId, parsed.data.razorpayOrderId))
+        .limit(1);
+
+      if (paymentRecord?.assessmentId) {
+        // Run your shared PDF generation logic using Bun/Node memory buffers
+        const reportPdfBuffer = await generateReportPdfBuffer({
+          assessmentId: paymentRecord.assessmentId,
+          user: { id: session.user.id, name: session.user.name }
+        });
+
+        const htmlEmailBody = `
+          <div style="font-family: sans-serif; line-height: 1.6; padding: 20px; color: #1e293b;">
+            <h2>Your Evaluation Report is Ready! 🎉</h2>
+            <p>Hi ${session.user.name || 'Candidate'},</p>
+            <p>Thank you for completing your evaluation. Your payment was verified successfully.</p>
+            <p>We have processed your data and generated your formal performance breakdown. Your custom analysis report has been attached to this email as a PDF document.</p>
+            <p>Best regards,<br /><strong>dhiviHR Team</strong></p>
+          </div>
+        `;
+
+        // Send out through your nodemailer service
+        await sendReceiptEmail({
+          to: targetEmail,
+          subject: `Your dhiviHR Evaluation Report - Order #${parsed.data.razorpayOrderId}`,
+          htmlContent: htmlEmailBody,
+          pdfBuffer: reportPdfBuffer,
+          pdfFilename: `dhiviHR-report-${paymentRecord.assessmentId}.pdf`
+        });
+
+        console.log(`Report email successfully sent to ${targetEmail}`);
+      }
+    }
+  } catch (emailError) {
+    // Caught locally so database mutations remain confirmed even if downstream mail configuration fails
+    console.error("Payment verified successfully, but report email generation failed:", emailError);
+  }
 
   return { ok: true as const };
 }

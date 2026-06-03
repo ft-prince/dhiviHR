@@ -14,6 +14,7 @@ interface User {
   id: string;
   name: string | null;
   email: string;
+  streamName: string | null;
   role: string;
   phone: string | null;
   collegeId: string | null;
@@ -145,6 +146,7 @@ export function UsersTableClient({
           { key: "role", header: "Role", render: (r) => (
             <span className="rounded-full bg-brand-50 text-brand-700 px-2 py-0.5 text-xs font-bold whitespace-nowrap">{ROLE_LABELS[r.role] ?? r.role}</span>
           )},
+          {key: "stream", header: "Stream", render: (r) => r.streamName ?? "—" },
           { key: "phone", header: "Phone", render: (r) => r.phone ?? "—" },
           { key: "college", header: "College", render: (r) => {
             const c = colleges.find((c) => c.id === r.collegeId);

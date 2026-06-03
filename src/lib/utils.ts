@@ -23,16 +23,9 @@ export function fmtTime(d: Date | string): string {
   });
 }
 
-export const READINESS_BANDS = [
-  { min: 0, max: 35, level: "emerging", label: "Emerging Talent", track: "Foundation Employability Track" },
-  { min: 36, max: 60, level: "developing", label: "Developing Professional", track: "Communication & Interview Track" },
-  { min: 61, max: 80, level: "industry_ready", label: "Industry-Ready Candidate", track: "Advanced Interview Performance Track" },
-  { min: 81, max: 100, level: "high_impact", label: "High-Impact Hire Potential", track: "Placement Excellence Track" },
+export const READINESS_LEVEL=[
+  { min: 0, max: 1.99, level: "learner", label: "Learner"},
+  { min: 2, max: 2.74, level: "practitioner", label: "Practitioner"},
+  { min: 2.75, max: 3.49, level: "accelerator", label: "Accelerator"},
+  { min: 3.5, max: 4, level: "future_ready", label: "Future Ready"},
 ] as const;
-
-export type ReadinessLevel = (typeof READINESS_BANDS)[number]["level"];
-
-export function bandFromScore(score: number) {
-  const clamped = Math.max(0, Math.min(100, Math.round(score)));
-  return READINESS_BANDS.find((b) => clamped >= b.min && clamped <= b.max) ?? READINESS_BANDS[0];
-}

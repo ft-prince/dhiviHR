@@ -1,6 +1,6 @@
 import { desc, eq, ilike, ne, or, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, colleges } from "@/lib/db/schema";
+import { users, colleges, streams } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
 import { UsersTableClient } from "@/components/admin/users-table-client";
 import { Pagination } from "@/components/admin/pagination";
@@ -28,8 +28,9 @@ export default async function AdminUsersPage({
 
   const [list, [{ total }], collegeList] = await Promise.all([
     db
-      .select({ id: users.id, name: users.name, email: users.email, role: users.role, phone: users.phone, collegeId: users.collegeId, createdAt: users.createdAt })
+      .select({ id: users.id, name: users.name, email: users.email, stream: users.streamId, streamName: streams.name, role: users.role, phone: users.phone, collegeId: users.collegeId, createdAt: users.createdAt })
       .from(users)
+      .leftJoin(streams, eq(streams.id, users.streamId))
       .where(where)
       .orderBy(desc(users.createdAt))
       .limit(PAGE_SIZE)
