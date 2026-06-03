@@ -18,95 +18,132 @@ export function build_prompt(result: AssessmentScore, userName: string, userEmai
     const scoresPayload = JSON.stringify(result, null, 2);
 
     return `
-    You are an expert career coach, copywriter and industrial organizational psychologist.
-    Your task is to generate the complete deep-dive content for a 6-page comprehensive student perfomance report based on their recent assessment metrics.
-    ###  CLIENT DETAILS:
-    - Name: ${userName}
-    - Email: ${userEmail}
-    -Stream: ${userStream}
-    
-    ### INPUT METRICS FROM SERVER (Scale 1-4)
-    ${scoresPayload}
-    
-    ---
+You are an expert career coach, copywriter and industrial organizational psychologist.
+Generate the complete deep-dive content for a comprehensive student assessment report.
 
-    ### CORE REPORT STRUCTURE REQUIREMENTS:
-    You must generate tailored text content for each of the following 6 sections exactly as described below:
+### CLIENT DETAILS:
+- Name: ${userName}
+- Email: ${userEmail}
+- Stream: ${userStream}
 
-    1. COVER PAGE:
-    - Provide a motivational, one-line plain-language description explaining their overall level tier (${result.levelLabel}). 
+### INPUT METRICS FROM SERVER (Scale 1-4)
+${scoresPayload}
 
-    2. OVERALL LEVEL EXPLAINED:
-    - Write a 2-paragraph plain-language explanation of what their tier means, what it tells a recruiter, and what it does NOT mean.
-    - Tone: Written in the second person ("You"), warm, highly motivational, and informative—never clinical or judgmental.
+---
 
-    3. COMMON BEHAVIOURAL COMPETENCY SCORECARD:
-    - Group interpretations for the common competencies into 3 specific clusters: "Mindset & Character", "Communication & Influence", and "Execution & Thinking".
-    - For each competency found in the input data, write a crisp 1-line plain-language interpretation explaining what their current gap level means.
+### REPORT SECTIONS (generate all 10):
 
-    4. STREAM-SPECIFIC COMPETENCY SECTION:
-    - Generate a professional 1-paragraph explanation answering: "Why these specific competencies matter for a ${userStream} professional entering the workforce in 2026."
-    - Provide a 1-line contextual interpretation for any stream-specific competencies listed in the breakdown.
+1. COVER PAGE:
+- One motivational sentence explaining their overall level tier (${result.levelLabel}).
 
-    5. AI AWARENESS INDICATOR:
-    - Determine an AI readiness tier based on the data or overall profile ("Aware", "Exploring", or "Ready").
-    - Write a 1-paragraph interpretation of this AI readiness level, highlighting it as a major platform differentiator and why recruiters value it highly right now.
+2. OVERALL LEVEL EXPLAINED:
+- 2 paragraphs: what their tier means to a recruiter, and what it does NOT mean.
+- Tone: second person ("You"), warm, motivational, never clinical.
 
-    6. STRENGTHS & DEVELOPMENT AREAS:
-    - Top 2-3 Strengths: Provide the competency name, what it means dynamically at work, and a concrete example of how the student can demonstrate it in interviews.
-    - Top 2-3 Development Areas: Provide the competency name, what the gap looks like in real work situations, and 2-3 hyper-specific, actionable steps they can take in the next 30-60 days (e.g., instead of "improve communication", suggest "practice summarizing your day in 3 sentences every evening"). Frame these as growth opportunities, not failures.
+3. COMMON BEHAVIOURAL COMPETENCY SCORECARD:
+- Group into 3 clusters: "Mindset & Character", "Communication & Influence", "Execution & Thinking".
+- For each competency: 1-line interpretation of what their gap level means.
 
-    ---
+4. STREAM-SPECIFIC COMPETENCIES:
+- 1 paragraph: why these competencies matter for a ${userStream} professional entering the workforce in 2026.
+- 1-line interpretation for each stream-specific competency.
 
-    ### STRICT OUTPUT FORMAT
-    You must respond ONLY with a valid JSON object. Do not include any markdown formatting wrappers like \\\`\\\`\\\`json or introductory/concluding conversational text. The JSON must strictly conform to this TypeScript structure:
+5. AI AWARENESS INDICATOR:
+- Determine tier: "Aware", "Exploring", or "Ready".
+- 1 paragraph interpreting this level and why recruiters value it.
+- List 3-5 specific AI tools relevant to ${userStream} they should learn (e.g. GitHub Copilot, ChatGPT, Midjourney, etc).
 
-    {
-    "coverPage": {
-        "oneLineDescription": "string"
-    },
-    "overallLevelExplained": {
-        "paragraph1": "string",
-        "paragraph2": "string"
-    },
-    "commonCompetencies": {
-        "mindsetAndCharacter": [
-        { "name": "string", "oneLineInterpretation": "string" }
-        ],
-        "communicationAndInfluence": [
-        { "name": "string", "oneLineInterpretation": "string" }
-        ],
-        "executionAndThinking": [
-        { "name": "string", "oneLineInterpretation": "string" }
-        ]
-    },
-    "streamSpecific": {
-        "whyItMattersParagraph": "string",
-        "competencies": [
-        { "name": "string", "oneLineInterpretation": "string" }
-        ]
-    },
-    "aiAwareness": {
-        "badgeLevel": "Aware | Exploring | Ready",
-        "interpretationParagraph": "string"
-    },
-    "strengthsAndDevelopment": {
-        "strengths": [
-        {
-            "competencyName": "string",
-            "whatItMeansAtWork": "string",
-            "howToDemonstrateInInterview": "string"
-        }
-        ],
-        "developmentAreas": [
-        {
-            "competencyName": "string",
-            "whatItLooksLikeAtWork": "string",
-            "actionableSteps": ["string", "string", "string"]
-        }
-        ]
-    }
-    }
+6. STRENGTHS & DEVELOPMENT AREAS:
+- Top 2-3 Strengths: competency name, what it means at work, how to demonstrate in interviews, and a real-world scenario example.
+- Top 2-3 Development Areas: competency name, what the gap looks like at work, and 4-5 hyper-specific actionable steps with resource recommendations (courses, books, tools). Frame as growth opportunities.
+
+7. INDUSTRY READINESS CONTEXT:
+- 1 paragraph on how the student's profile maps to current industry hiring trends in ${userStream} for 2025-2026.
+
+8. 30-60-90 DAY ACTION PLAN:
+- Days 1-30: 3-4 foundation actions (habits, mindset shifts, daily practices).
+- Days 31-60: 3-4 build actions (skill-building, projects, portfolio work).
+- Days 61-90: 3-4 demonstrate actions (interview prep, networking, showcasing).
+
+9. INTERVIEW PREPARATION GUIDE:
+- 3-4 likely interview questions based on their gap areas.
+- For each: the question text and a suggested answer framework (STAR method or similar).
+
+10. PEER COMPARISON INSIGHT:
+- 1 paragraph general positioning statement (without revealing other students' data). Example tone: "Students at your level typically strengthen X competency first because..."
+
+---
+
+### STRICT OUTPUT FORMAT
+Respond ONLY with a valid JSON object. No markdown wrappers, no conversational text.
+
+{
+  "coverPage": {
+    "oneLineDescription": "string"
+  },
+  "overallLevelExplained": {
+    "paragraph1": "string",
+    "paragraph2": "string"
+  },
+  "commonCompetencies": {
+    "mindsetAndCharacter": [
+      { "name": "string", "oneLineInterpretation": "string" }
+    ],
+    "communicationAndInfluence": [
+      { "name": "string", "oneLineInterpretation": "string" }
+    ],
+    "executionAndThinking": [
+      { "name": "string", "oneLineInterpretation": "string" }
+    ]
+  },
+  "streamSpecific": {
+    "whyItMattersParagraph": "string",
+    "competencies": [
+      { "name": "string", "oneLineInterpretation": "string" }
+    ]
+  },
+  "aiAwareness": {
+    "badgeLevel": "Aware | Exploring | Ready",
+    "interpretationParagraph": "string",
+    "recommendedTools": ["string"]
+  },
+  "strengthsAndDevelopment": {
+    "strengths": [
+      {
+        "competencyName": "string",
+        "whatItMeansAtWork": "string",
+        "howToDemonstrateInInterview": "string",
+        "realWorldScenario": "string"
+      }
+    ],
+    "developmentAreas": [
+      {
+        "competencyName": "string",
+        "whatItLooksLikeAtWork": "string",
+        "actionableSteps": ["string", "string", "string", "string", "string"]
+      }
+    ]
+  },
+  "industryReadiness": {
+    "paragraph": "string"
+  },
+  "actionPlan": {
+    "days30": ["string", "string", "string"],
+    "days60": ["string", "string", "string"],
+    "days90": ["string", "string", "string"]
+  },
+  "interviewPrep": {
+    "questions": [
+      {
+        "question": "string",
+        "answerFramework": "string"
+      }
+    ]
+  },
+  "peerInsight": {
+    "positioningStatement": "string"
+  }
+}
     `.trim();
 }
 
@@ -138,7 +175,7 @@ export async function generatePdfData(result : AssessmentScore, userName: string
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.3,
-                "max_tokens": 4096,
+                "max_tokens": 8192,
                 "response_format": {type: "json_object"}
             }),
             signal: controller.signal

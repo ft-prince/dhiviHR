@@ -1,17 +1,39 @@
 "use client";
-export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { signupAction, studentSignupAction } from "@/lib/auth/actions";
+import { signupAction, studentSignupAction, getStreamsForAccessCodeAction } from "@/lib/auth/actions";
 
+interface StreamOption {
+  id: string;
+  name: string;
+}
 
-export function SignupForm({ variant = "public", streams = [], }: { variant?: "public" | "student", streams: { id: string; name: string }[] }) {
+export function SignupForm({ variant = "public", streams: initialStreams = [] }: { variant?: "public" | "student"; streams: StreamOption[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [streams, setStreams] = useState<StreamOption[]>(initialStreams);
+  const [loadingStreams, setLoadingStreams] = useState(false);
+
+  async function handleAccessCodeBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const code = e.target.value.trim();
+    if (!code || code.length < 6) return;
+    setLoadingStreams(true);
+    try {
+      const result = await getStreamsForAccessCodeAction(code);
+      setStreams(result);
+    } finally {
+      setLoadingStreams(false);
+    }
+  }
+
+  useEffect(() => {
+    setStreams(initialStreams);
+  }, [initialStreams]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,7 +62,9 @@ export function SignupForm({ variant = "public", streams = [], }: { variant?: "p
             required
             placeholder="DH-XXXXXX"
             className="uppercase tracking-widest"
+            onBlur={handleAccessCodeBlur}
           />
+          {loadingStreams && <p className="text-xs text-ink-muted mt-1">Loading streams...</p>}
         </div>
       )}
       <div>
@@ -58,12 +82,15 @@ export function SignupForm({ variant = "public", streams = [], }: { variant?: "p
           name="stream"
           required
           defaultValue=""
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-            <option value="" disabled>Select a stream...</option>
-            {streams.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        >
+          <option value="" disabled>
+            {variant === "student" && streams.length === 0 ? "Enter access code first..." : "Select a stream..."}
+          </option>
+          {streams.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
       </div>
       <div>
         <Label htmlFor="phone">Phone (optional)</Label>

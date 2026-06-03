@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { eq, asc, not, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { formTemplates, templateQuestions, questions, colleges, competencies } from "@/lib/db/schema";
+import { formTemplates, templateQuestions, questions, streams, competencies } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
 import { TemplateDetailClient } from "@/components/admin/template-detail-client";
 import { TemplateRuleEditor } from "@/components/admin/template-rule-editor";
@@ -15,7 +15,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
   const [template] = await db.select().from(formTemplates).where(eq(formTemplates.id, id)).limit(1);
   if (!template) notFound();
 
-  const [inTemplate, assignedColleges, competencyRows] = await Promise.all([
+  const [inTemplate, assignedStreams, competencyRows] = await Promise.all([
     db
       .select({
         tqId: templateQuestions.id,
@@ -32,7 +32,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
       .innerJoin(questions, eq(templateQuestions.questionId, questions.id))
       .where(eq(templateQuestions.templateId, id))
       .orderBy(asc(templateQuestions.orderIndex), asc(questions.orderIndex)),
-    db.select({ id: colleges.id, name: colleges.name }).from(colleges).where(eq(colleges.templateId, id)),
+    db.select({ id: streams.id, name: streams.name }).from(streams).where(eq(streams.templateId, id)),
     db.select({ id: competencies.id, slug: competencies.slug, label: competencies.label }).from(competencies).where(eq(competencies.active, true)).orderBy(asc(competencies.orderIndex)),
   ]);
 
@@ -63,7 +63,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
           template={template}
           inTemplate={inTemplate as Parameters<typeof TemplateDetailClient>[0]["inTemplate"]}
           availableQuestions={availableQuestions}
-          assignedColleges={assignedColleges}
+          assignedStreams={assignedStreams}
           competencyLabels={competencyLabels}
           competencies={competencyRows}
         />

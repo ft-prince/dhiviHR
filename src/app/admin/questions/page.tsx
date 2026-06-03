@@ -1,6 +1,6 @@
 import { asc, desc, eq, ilike, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { questions, streams, competencies } from "@/lib/db/schema";
+import { questions, competencies } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { PageHeader } from "@/components/admin/page-header";
 import { QuestionRow } from "@/components/admin/question-row";
@@ -19,20 +19,18 @@ export default async function AdminQuestionsPage({
 }) {
   const sp = await searchParams;
   const q = sp.q?.trim() ?? "";
-  const streamFilter = sp.stream ?? "";
   const competencyFilter = sp.competency ?? "";
   const activeFilter = sp.active ?? "";
   const page = Math.max(1, Number(sp.page ?? 1));
 
   const filters = [];
   if (q) filters.push(ilike(questions.prompt, `%${q}%`));
-  if (streamFilter) filters.push(eq(questions.streamId, streamFilter));
   if (competencyFilter) filters.push(eq(questions.competencyId, competencyFilter));
   if (activeFilter === "active") filters.push(eq(questions.active, true));
   if (activeFilter === "inactive") filters.push(eq(questions.active, false));
   const where = filters.length > 0 ? and(...filters) : undefined;
 
-  const [rows, [{ total }], competencyRows, streamRows] = await Promise.all([
+  const [rows, [{ total }], competencyRows] = await Promise.all([
     db
       .select()
       .from(questions)
@@ -45,17 +43,11 @@ export default async function AdminQuestionsPage({
       .select({ id: competencies.id, slug: competencies.slug, label: competencies.label })
       .from(competencies)
       .orderBy(asc(competencies.orderIndex)),
-    db
-      .select({ id: sql<string>`id::text`, name: sql<string>`name::text` })
-      .from(streams)
-      .orderBy(asc(streams.name))
   ]);
 
   const competencyList = competencyRows.length > 0 ? competencyRows : [];
-  const streamList = streamRows.length > 0 ? streamRows : [];
   const labelMap = Object.fromEntries(competencyList.map((c) => [c.id, c.label]));
 
-  // Group by competency for display
   const grouped = new Map<string, typeof rows>();
   for (const r of rows) {
     const arr = grouped.get(r.competencyId) ?? [];
@@ -68,18 +60,17 @@ export default async function AdminQuestionsPage({
       <PageHeader
         title="Question Bank"
         description="Edit prompts, options, and weights. Inactive questions are hidden from candidates."
-        actions={<QuestionCreatePanel competencies={competencyList} streams={streamList} />}
+        actions={<QuestionCreatePanel competencies={competencyList} />}
       />
       <div className="space-y-4">
         <QuestionsFilterBar
-          filters={{ q, stream: streamFilter, competency: competencyFilter, active: activeFilter }}
-          streams={streamList}
+          filters={{ q, competency: competencyFilter, active: activeFilter }}
           competencies={competencyList}
         />
 
         {rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-white p-12 text-center text-sm text-ink-soft">
-            {q || streamFilter || competencyFilter || activeFilter
+            {q || competencyFilter || activeFilter
               ? "No questions match the current filters."
               : "No questions yet. Create your first question using the button above."}
           </div>
@@ -99,11 +90,9 @@ export default async function AdminQuestionsPage({
                       prompt={r.prompt}
                       active={r.active}
                       orderIndex={r.orderIndex}
-                      streamId={r.streamId}
                       competencyId={r.competencyId}
                       options={r.options as { id: string; label: string; weight: number }[]}
                       competencies={competencyList}
-                      streams={streamList}
                     />
                   ))}
                 </div>

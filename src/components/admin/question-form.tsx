@@ -13,7 +13,6 @@ interface Option {
 }
 
 type QuestionData = {
-  streamId: string;
   sectionId?: string | null;
   competencyId: string;
   prompt: string;
@@ -29,13 +28,9 @@ interface CompetencyOption {
 }
 
 interface QuestionFormProps {
-  streamId?: string; 
   initial?: { id: string } & QuestionData;
-  /** Override the save action — used when creating directly from a template page */
   createAction?: (data: QuestionData) => Promise<{ ok: boolean; error?: string }>;
   onDone?: () => void;
-  /** Dynamic competency list from DB — falls back to hardcoded list if omitted */
-  streams?: { id: string; name: string }[];
   competencies?: CompetencyOption[];
 }
 
@@ -43,12 +38,11 @@ function generateOptionId() {
   return Math.random().toString(36).slice(2, 7);
 }
 
-export function QuestionForm({ initial, createAction, onDone, streams, competencies }: QuestionFormProps) {
+export function QuestionForm({ initial, createAction, onDone, competencies }: QuestionFormProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const [streamId, setStreamId] = useState<string>(initial?.streamId ?? streams?.[0]?.id ?? "");
   const [sectionId, setSectionId] = useState<string | null>(null);
   const [competencyId, setCompetencyId] = useState<string>(initial?.competencyId ?? competencies?.[0]?.id ?? "");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
@@ -82,11 +76,11 @@ export function QuestionForm({ initial, createAction, onDone, streams, competenc
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if(prompt.trim().length<5){
+    if (prompt.trim().length < 5) {
       setError("Prompt must be at least 5 characters long.");
       return;
     }
-    const data: QuestionData = { streamId, sectionId, competencyId, prompt, options, active, orderIndex };
+    const data: QuestionData = { sectionId, competencyId, prompt, options, active, orderIndex };
     start(async () => {
       const result = createAction
         ? await createAction(data)
@@ -103,21 +97,6 @@ export function QuestionForm({ initial, createAction, onDone, streams, competenc
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-semibold text-ink-soft">Stream</label>
-          <select
-            value={streamId}
-            onChange={(e) => setStreamId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            <option value="">Select a stream</option>
-            {streams?.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
         <div>
           <label className="text-xs font-semibold text-ink-soft">Competency</label>
           <select

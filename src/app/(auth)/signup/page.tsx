@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isNull } from "drizzle-orm";
 import { Wordmark } from "@/components/brand/logo";
 import { db } from "@/lib/db";
 import { streams } from "@/lib/db/schema";
@@ -7,7 +8,7 @@ import { SignupForm } from "@/components/auth/signup-form";
 const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
-  const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams);
+  const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams).where(isNull(streams.collegeId));
   return (
     <main className="min-h-screen grid place-items-center bg-brand-50 p-6">
       <div className="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-8 shadow-card">

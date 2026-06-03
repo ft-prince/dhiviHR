@@ -11,7 +11,6 @@ import {
   questions,
   scores,
   users,
-  colleges,
   formTemplates,
   templateQuestions,
   streams,
@@ -21,19 +20,8 @@ import { auth } from "@/lib/auth";
 import { scoreAssessment} from "@/lib/scoring";
 import { generatePdfData } from "@/lib/report";
 
-type AssessmentQuestion = {
-  id: string;
-  streamId: string;
-  competencyId: string;
-  prompt: string;
-  options: any;
-  active: boolean;
-  orderIndex: number;
-};
-
 const QUESTION_FIELDS = {
   id: questions.id,
-  streamId: questions.streamId,
   competencyId: questions.competencyId,
   competency: competencies.label,
   prompt: questions.prompt,
@@ -44,30 +32,30 @@ const QUESTION_FIELDS = {
 
 /**
  * Resolve which template applies to a user:
- *   1. the template assigned to the user's college, else
+ *   1. the template assigned to the user's stream, else
  *   2. the platform default template.
  * Returns null when neither exists.
  */
 async function resolveTemplateIdForUser(userId: string): Promise<string | null> {
   const [u] = await db
-    .select({ collegeId: users.collegeId })
+    .select({ streamId: users.streamId })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  if (u?.collegeId) {
-    const [c] = await db
-      .select({ templateId: colleges.templateId })
-      .from(colleges)
-      .where(eq(colleges.id, u.collegeId))
+  if (u?.streamId) {
+    const [s] = await db
+      .select({ templateId: streams.templateId })
+      .from(streams)
+      .where(eq(streams.id, u.streamId))
       .limit(1);
-    if (c?.templateId) return c.templateId;
+    if (s?.templateId) return s.templateId;
   }
 
   const [def] = await db
     .select({ id: formTemplates.id })
     .from(formTemplates)
-    .innerJoin(templateQuestions, eq(templateQuestions.templateId, formTemplates.id)) 
+    .innerJoin(templateQuestions, eq(templateQuestions.templateId, formTemplates.id))
     .where(and(eq(formTemplates.isDefault, true), eq(templateQuestions.active, true)))
     .limit(1);
 
@@ -77,32 +65,20 @@ async function resolveTemplateIdForUser(userId: string): Promise<string | null> 
 /**
  * The exact set of questions for a user's assessment. Only questions explicitly
  * attached to the resolved template (and active in both the template and the
- * question bank) are returned — no global questions are merged in. Falls back to
- * all active questions only when no template is configured anywhere.
+ * question bank) are returned. Returns empty array when no template is configured.
  */
 async function resolveAssessmentQuestions(userId: string): Promise<any[]> {
   const templateId = await resolveTemplateIdForUser(userId);
 
   if (!templateId) {
-    return db
-      .select(QUESTION_FIELDS)
-      .from(questions)
-      .innerJoin(users, eq(users.streamId, questions.streamId))
-      .innerJoin(competencies, eq(competencies.id, questions.competencyId)) // 👈 Add this join loop
-      .where(
-        and(
-          eq(users.id, userId),
-          eq(questions.active, true)
-        )
-      )
-      .orderBy(asc(questions.orderIndex));
+    return [];
   }
 
   return db
     .select(QUESTION_FIELDS)
     .from(templateQuestions)
     .innerJoin(questions, eq(templateQuestions.questionId, questions.id))
-    .innerJoin(competencies, eq(competencies.id, questions.competencyId)) // 👈 Add this join loop here too
+    .innerJoin(competencies, eq(competencies.id, questions.competencyId))
     .where(
       and(
         eq(templateQuestions.templateId, templateId),

@@ -1,7 +1,7 @@
 import { desc, eq, ilike, isNotNull, sql } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { formTemplates, templateQuestions, colleges } from "@/lib/db/schema";
+import { formTemplates, templateQuestions, streams } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
 import { DataTable } from "@/components/admin/data-table";
 import { TemplateForm } from "@/components/admin/template-form";
@@ -23,7 +23,7 @@ export default async function AdminTemplatesPage({
 
   const where = q ? ilike(formTemplates.name, `%${q}%`) : undefined;
 
-  const [templateList, [{ total }], collegeList, questionCounts, collegeCounts] = await Promise.all([
+  const [templateList, [{ total }], streamList, questionCounts, streamCounts] = await Promise.all([
     db
       .select({
         id: formTemplates.id,
@@ -40,9 +40,8 @@ export default async function AdminTemplatesPage({
 
     db.select({ total: sql<number>`count(*)::int` }).from(formTemplates).where(where),
 
-    db.select({ id: colleges.id, name: colleges.name }).from(colleges).orderBy(colleges.name),
+    db.select({ id: streams.id, name: streams.name }).from(streams).orderBy(streams.name),
 
-    // Aggregate question counts per template — avoids correlated subquery driver issues
     db
       .select({
         templateId: templateQuestions.templateId,
@@ -51,31 +50,30 @@ export default async function AdminTemplatesPage({
       .from(templateQuestions)
       .groupBy(templateQuestions.templateId),
 
-    // Aggregate college counts per template
     db
       .select({
-        templateId: colleges.templateId,
+        templateId: streams.templateId,
         count: sql<number>`count(*)::int`,
       })
-      .from(colleges)
-      .where(isNotNull(colleges.templateId))
-      .groupBy(colleges.templateId),
+      .from(streams)
+      .where(isNotNull(streams.templateId))
+      .groupBy(streams.templateId),
   ]);
 
   const qMap = new Map(questionCounts.map((r) => [r.templateId, r.count]));
-  const cMap = new Map(collegeCounts.map((r) => [r.templateId as string, r.count]));
+  const sMap = new Map(streamCounts.map((r) => [r.templateId as string, r.count]));
 
   const rows = templateList.map((t) => ({
     ...t,
     questionCount: qMap.get(t.id) ?? 0,
-    collegeCount: cMap.get(t.id) ?? 0,
+    streamCount: sMap.get(t.id) ?? 0,
   }));
 
   return (
     <>
       <PageHeader
         title="Form Templates"
-        description="Create and manage question templates. Assign templates to colleges so each cohort gets the right assessment."
+        description="Create and manage question templates. Assign templates to streams so each cohort gets the right assessment."
       />
       <div className="grid lg:grid-cols-[1fr_380px] gap-6">
         <div className="min-w-0">
@@ -105,7 +103,7 @@ export default async function AdminTemplatesPage({
                   ),
               },
               { key: "questions", header: "Questions", render: (r) => r.questionCount },
-              { key: "colleges", header: "Colleges", render: (r) => r.collegeCount },
+              { key: "streams", header: "Streams", render: (r) => r.streamCount },
               {
                 key: "actions",
                 header: "",
@@ -121,9 +119,9 @@ export default async function AdminTemplatesPage({
         </div>
         <div className="rounded-2xl border border-border bg-white p-6">
           <h2 className="font-display font-bold text-lg text-ink">New Template</h2>
-          <p className="mt-1 text-xs text-ink-soft">Create a blank template or copy one from an existing college.</p>
+          <p className="mt-1 text-xs text-ink-soft">Create a blank template or copy one from an existing stream.</p>
           <div className="mt-4">
-            <TemplateForm colleges={collegeList} />
+            <TemplateForm streams={streamList} />
           </div>
         </div>
       </div>

@@ -6,16 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface Props {
-  filters: { q: string; stream: string; competency: string; active: string };
-  streams: { id: string; name: string }[];
+  filters: { q: string; competency: string; active: string };
   competencies: { id: string; slug: string; label: string }[];
 }
 
-export function QuestionsFilterBar({ filters, streams, competencies }: Props) {
+export function QuestionsFilterBar({ filters, competencies }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState(filters.q);
-  const [stream, setStream] = useState(filters.stream);
   const [competency, setCompetency] = useState(filters.competency);
   const [active, setActive] = useState(filters.active);
 
@@ -23,7 +21,6 @@ export function QuestionsFilterBar({ filters, streams, competencies }: Props) {
     e?.preventDefault();
     const params = new URLSearchParams();
     if (q) params.set("q", q);
-    if (stream) params.set("stream", stream);
     if (competency) params.set("competency", competency);
     if (active) params.set("active", active);
     params.set("page", "1");
@@ -31,28 +28,17 @@ export function QuestionsFilterBar({ filters, streams, competencies }: Props) {
   }
 
   function clear() {
-    setQ(""); setStream(""); setCompetency(""); setActive("");
+    setQ(""); setCompetency(""); setActive("");
     router.push(pathname);
   }
 
-  const hasFilters = filters.q || filters.stream || filters.competency || filters.active;
+  const hasFilters = filters.q || filters.competency || filters.active;
 
   return (
     <form onSubmit={apply} className="flex flex-wrap gap-2 items-end rounded-2xl border border-border bg-white p-4">
       <div className="flex-1 min-w-44">
         <label className="text-xs font-semibold text-ink-soft">Search</label>
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search question text…" className="mt-1" />
-      </div>
-      <div>
-        <label className="text-xs font-semibold text-ink-soft">Stream</label>
-        <select
-          value={stream}
-          onChange={(e) => setStream(e.target.value)}
-          className="mt-1 block rounded-md border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
-        >
-          <option value="">All streams</option>
-          {streams.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
       </div>
       <div>
         <label className="text-xs font-semibold text-ink-soft">Competency</label>

@@ -3,7 +3,7 @@ import { fmtDate } from "@/lib/utils";
 import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { colleges, users, accessCodeBatches, formTemplates } from "@/lib/db/schema";
+import { colleges, streams, formTemplates } from "@/lib/db/schema";
 import { PageHeader } from "@/components/admin/page-header";
 import { DataTable } from "@/components/admin/data-table";
 import { CollegeDetailClient } from "@/components/admin/college-detail-client";
@@ -27,6 +27,12 @@ type BatchRow = {
   redeemed: number;
 };
 
+type StreamRow = {
+  id: string;
+  name: string;
+  templateName: string | null;
+};
+
 export default async function CollegeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -38,7 +44,6 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
       contactEmail: colleges.contactEmail,
       contactPhone: colleges.contactPhone,
       notes: colleges.notes,
-      templateId: colleges.templateId,
       createdAt: colleges.createdAt,
       updatedAt: colleges.updatedAt,
     })
@@ -48,8 +53,7 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
 
   if (!college) notFound();
 
-  const [studentsResult, batchesResult, templateList] = await Promise.all([
-    // Raw SQL for students — correlated subqueries need raw to avoid Drizzle interpolation bug
+  const [studentsResult, batchesResult, collegeStreams] = await Promise.all([
     db.execute(sql`
       SELECT
         u.id,
@@ -74,7 +78,6 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
       ORDER BY u.created_at DESC
     `),
 
-    // Raw SQL for batches — same fix for redeemed count
     db.execute(sql`
       SELECT
         b.id,
@@ -92,13 +95,18 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
       ORDER BY b.created_at DESC
     `),
 
-    db.select({ id: formTemplates.id, name: formTemplates.name })
-      .from(formTemplates)
-      .orderBy(formTemplates.name),
+    db.select({
+      id: streams.id,
+      name: streams.name,
+      templateName: formTemplates.name,
+    })
+      .from(streams)
+      .leftJoin(formTemplates, eq(streams.templateId, formTemplates.id))
+      .where(eq(streams.collegeId, id)),
   ]);
 
   const students = studentsResult.rows as unknown as StudentRow[];
-  const batches  = batchesResult.rows  as unknown as BatchRow[];
+  const batches = batchesResult.rows as unknown as BatchRow[];
 
   return (
     <>
@@ -112,10 +120,9 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
         description={`Slug: ${college.slug} · Added ${fmtDate(college.createdAt)}`}
       />
 
-      <CollegeDetailClient college={college} templateList={templateList} />
+      <CollegeDetailClient college={college} collegeStreams={collegeStreams as StreamRow[]} />
 
       <div className="mt-8 space-y-8">
-        {/* Students */}
         <section>
           <h2 className="font-display font-bold text-lg text-ink mb-3">
             Students
@@ -135,7 +142,7 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
                   </div>
                 ),
               },
-              { key: "assessments", header: "Attempts",     render: (r) => r.assessmentCount },
+              { key: "assessments", header: "Attempts", render: (r) => r.assessmentCount },
               {
                 key: "score",
                 header: "Latest Score",
@@ -149,7 +156,6 @@ export default async function CollegeDetailPage({ params }: { params: Promise<{ 
           />
         </section>
 
-        {/* Code batches */}
         <section>
           <h2 className="font-display font-bold text-lg text-ink mb-3">
             Access Code Batches

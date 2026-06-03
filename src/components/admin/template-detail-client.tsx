@@ -27,7 +27,6 @@ interface InTemplateQuestion {
   tqActive: boolean;
   tqOrderIndex: number;
   id: string;
-  streamId: string;
   competencyId: string;
   prompt: string;
   options: unknown;
@@ -51,7 +50,7 @@ interface Props {
   };
   inTemplate: InTemplateQuestion[];
   availableQuestions: AvailableQuestion[];
-  assignedColleges: { id: string; name: string }[];
+  assignedStreams: { id: string; name: string }[];
   competencyLabels: Record<string, string>;
   competencies: { id: string; slug: string; label: string }[];
 }
@@ -133,7 +132,6 @@ function InTemplateCard({
           <QuestionForm
             initial={{
               id: q.id,
-              streamId: q.streamId,
               competencyId: q.competencyId,
               prompt: q.prompt,
               options: q.options as Option[],
@@ -228,7 +226,7 @@ export function TemplateDetailClient({
   template,
   inTemplate,
   availableQuestions,
-  assignedColleges,
+  assignedStreams,
   competencyLabels,
   competencies
 }: Props) {
@@ -262,9 +260,9 @@ export function TemplateDetailClient({
               {template.isDefault && (
                 <span className="rounded-full bg-brand-500 text-white px-2 py-0.5 text-xs font-bold">Default</span>
               )}
-              {assignedColleges.length > 0 && (
+              {assignedStreams.length > 0 && (
                 <span className="text-xs text-ink-soft break-words">
-                  Assigned to: {assignedColleges.map((c) => c.name).join(", ")}
+                  Assigned to: {assignedStreams.map((s) => s.name).join(", ")}
                 </span>
               )}
             </div>
@@ -281,7 +279,7 @@ export function TemplateDetailClient({
               className="text-red-600 hover:bg-red-50"
               disabled={deletingTemplate}
               onClick={() => {
-                if (confirm("Delete this template? Colleges using it will lose their template assignment.")) {
+                if (confirm("Delete this template? Streams using it will lose their template assignment.")) {
                   handleDeleteTemplate();
                 }
               }}

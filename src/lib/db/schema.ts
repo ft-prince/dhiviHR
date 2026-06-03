@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   index,
   real,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -61,7 +62,7 @@ export const users = pgTable("users", {
   name: text("name"),
   email: text("email").notNull().unique(),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
-  streamId: uuid("stream_id").references(() => streams.id, {onDelete: "set null"}),
+  streamId: uuid("stream_id").references((): AnyPgColumn => streams.id, {onDelete: "set null"}),
   passwordHash: text("password_hash"),
   image: text("image"),
   role: userRole("role").notNull().default("student"),
@@ -140,7 +141,6 @@ export const colleges = pgTable("colleges", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   notes: text("notes"),
-  templateId: uuid("template_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -149,6 +149,8 @@ export const streams = pgTable("streams", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  collegeId: uuid("college_id").references(() => colleges.id, { onDelete: "set null" }),
+  templateId: uuid("template_id").references(() => formTemplates.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -184,7 +186,6 @@ export const accessCodes = pgTable(
 
 export const questions = pgTable("questions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  streamId: uuid("stream_id").notNull().references(() => streams.id, { onDelete: "restrict" }),
   sectionId: uuid("section_id").references(() => sections.id, { onDelete: "set null" }),
   competencyId: uuid("competency_id").notNull().references(() => competencies.id, { onDelete: "restrict" }),
   prompt: text("prompt").notNull(),
@@ -269,31 +270,30 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   college: one(colleges, { fields: [users.collegeId], references: [colleges.id] }),
 }));
 
-export const collegesRelations = relations(colleges, ({ many, one }) => ({
+export const collegesRelations = relations(colleges, ({ many }) => ({
   batches: many(accessCodeBatches),
   codes: many(accessCodes),
   students: many(users),
-  template: one(formTemplates, { fields: [colleges.templateId], references: [formTemplates.id] }),
+  streams: many(streams),
 }));
 
-export const streamRelations = relations(streams, ({ many }) => ({
-  templates: many(formTemplates),
+export const streamRelations = relations(streams, ({ many, one }) => ({
+  college: one(colleges, { fields: [streams.collegeId], references: [colleges.id] }),
+  template: one(formTemplates, { fields: [streams.templateId], references: [formTemplates.id] }),
   sections: many(sections),
-  questions: many(questions),
   assessments: many(assessments),
   users: many(users),
 }));
 
 export const questionsRelations = relations(questions, ({ one }) => ({
-  stream: one(streams, { fields: [questions.streamId], references: [streams.id] }),
   section: one(sections, { fields: [questions.sectionId], references: [sections.id] }),
-  competency: one(competencies, {fields: [questions.competencyId], references: [competencies.id]}),
+  competency: one(competencies, { fields: [questions.competencyId], references: [competencies.id] }),
   createdByUser: one(users, { fields: [questions.createdBy], references: [users.id] }),
 }));
 
 export const formTemplatesRelations = relations(formTemplates, ({ many }) => ({
   templateQuestions: many(templateQuestions),
-  colleges: many(colleges),
+  streams: many(streams),
 }));
 
 export const templateQuestionsRelations = relations(templateQuestions, ({ one }) => ({

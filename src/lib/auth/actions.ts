@@ -174,3 +174,21 @@ export async function logoutAction() {
   await signOut({ redirect: false });
   redirect("/");
 }
+
+export async function getStreamsForAccessCodeAction(accessCode: string) {
+  const trimmed = accessCode.trim().toUpperCase();
+  if (!trimmed) return [];
+
+  const [code] = await db
+    .select({ collegeId: accessCodes.collegeId })
+    .from(accessCodes)
+    .where(and(eq(accessCodes.code, trimmed), isNull(accessCodes.redeemedBy)))
+    .limit(1);
+
+  if (!code) return [];
+
+  return db
+    .select({ id: streams.id, name: streams.name })
+    .from(streams)
+    .where(eq(streams.collegeId, code.collegeId));
+}

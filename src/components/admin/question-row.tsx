@@ -6,26 +6,23 @@ import { Button } from "@/components/ui/button";
 import { QuestionForm } from "@/components/admin/question-form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { toggleQuestionActiveAction, deleteQuestionAction } from "@/lib/admin/actions";
+
 export function QuestionRow({
   id,
   prompt,
   active,
   orderIndex,
-  streamId,
   competencyId,
   options,
   competencies,
-  streams
 }: {
   id: string;
   prompt: string;
   active: boolean;
   orderIndex: number;
-  streamId: string;
-  competencyId : string;
+  competencyId: string;
   options: { id: string; label: string; weight: number }[];
-  competencies?: { id:string; slug: string; label: string }[];
-  streams?: { id: string; name: string }[];
+  competencies?: { id: string; slug: string; label: string }[];
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -82,10 +79,8 @@ export function QuestionRow({
       {editing && (
         <div className="mt-4 border-t border-border pt-4">
           <QuestionForm
-            streamId = {streamId}
-            initial={{ id, streamId, competencyId, prompt, options, orderIndex, active,  }}
+            initial={{ id, competencyId, prompt, options, orderIndex, active }}
             competencies={competencies}
-            streams={streams}
             onDone={() => { setEditing(false); router.refresh(); }}
           />
         </div>

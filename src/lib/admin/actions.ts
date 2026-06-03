@@ -112,6 +112,8 @@ export async function deleteCollegeAction(id: string) {
 
 const streamSchema = z.object({
   name: z.string().min(2),
+  collegeId: z.string().uuid().optional().or(z.literal("")),
+  templateId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export async function createStreamAction(input: z.infer<typeof streamSchema>) {
@@ -122,7 +124,12 @@ export async function createStreamAction(input: z.infer<typeof streamSchema>) {
   const slug = `${baseSlug}-${code().slice(0, 4).toLowerCase()}`;
   const [row] = await db
     .insert(streams)
-    .values({ name: parsed.data.name, slug })
+    .values({
+      name: parsed.data.name,
+      slug,
+      collegeId: parsed.data.collegeId || null,
+      templateId: parsed.data.templateId || null,
+    })
     .returning();
   await audit({ actorId: me.id, action: "stream.create", target: row.id, meta: { name: row.name } });
   revalidatePath("/admin/streams");
@@ -132,16 +139,18 @@ export async function createStreamAction(input: z.infer<typeof streamSchema>) {
 const streamUpdateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(2),
+  collegeId: z.string().uuid().optional().or(z.literal("")),
+  templateId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export async function updateStreamAction(input: z.infer<typeof streamUpdateSchema>) {
   const me = await requireAdmin();
   const parsed = streamUpdateSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
-  const { id, name } = parsed.data;
+  const { id, name, collegeId, templateId } = parsed.data;
   await db
     .update(streams)
-    .set({ name, updatedAt: new Date() })
+    .set({ name, collegeId: collegeId || null, templateId: templateId || null, updatedAt: new Date() })
     .where(eq(streams.id, id));
   await audit({ actorId: me.id, action: "stream.update", target: id, meta: { name } });
   revalidatePath("/admin/streams");
@@ -214,7 +223,6 @@ export async function deleteCodeBatchAction(batchId: string) {
 
 const questionSchema = z.object({
   id: z.string().uuid().optional(),
-  streamId: z.string().uuid(),
   sectionId: z.string().uuid().optional().nullable(),
   competencyId: z.string().uuid(),
   prompt: z.string().min(5),
@@ -237,14 +245,12 @@ export async function upsertQuestionAction(input: z.infer<typeof questionSchema>
   const parsed = questionSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
-  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
   if (!data.competencyId) return { ok: false as const, error: "Competency is required" };
 
   if (data.id) {
     await db
       .update(questions)
       .set({
-        streamId: data.streamId,
         sectionId: data.sectionId ?? null,
         competencyId: data.competencyId,
         prompt: data.prompt,
@@ -261,7 +267,6 @@ export async function upsertQuestionAction(input: z.infer<typeof questionSchema>
     const [row] = await db
       .insert(questions)
       .values({
-        streamId: data.streamId,
         sectionId: data.sectionId ?? null,
         competencyId: data.competencyId,
         prompt: data.prompt,
@@ -285,15 +290,12 @@ export async function createAndAddToTemplateAction(
   const parsed = questionSchema.omit({ id: true }).safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
-  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
-  if (!data.sectionId) return { ok: false as const, error: "Section is required" };
   if (!data.competencyId) return { ok: false as const, error: "Competency is required" };
 
   const [row] = await db
     .insert(questions)
     .values({
-      streamId: data.streamId,
-      sectionId: data.sectionId,
+      sectionId: data.sectionId ?? null,
       competencyId: data.competencyId,
       prompt: data.prompt,
       options: data.options,
@@ -325,14 +327,11 @@ export async function forkAndUpdateTemplateQuestionAction(
   const parsed = questionSchema.omit({ id: true }).safeParse(input);
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
   const data = parsed.data;
-  if (!data.streamId) return { ok: false as const, error: "Stream is required" };
-  if (!data.sectionId) return { ok: false as const, error: "Section is required" };
 
   const [newQ] = await db
     .insert(questions)
     .values({
-      streamId: data.streamId,
-      sectionId: data.sectionId,
+      sectionId: data.sectionId ?? null,
       competencyId: data.competencyId,
       prompt: data.prompt,
       options: data.options,
@@ -519,11 +518,11 @@ export async function updateTemplateAction(input: z.infer<typeof templateUpdateS
 
 export async function deleteTemplateAction(id: string) {
   const me = await requireAdmin();
-  await db.update(colleges).set({ templateId: null }).where(eq(colleges.templateId, id));
+  await db.update(streams).set({ templateId: null }).where(eq(streams.templateId, id));
   await db.delete(formTemplates).where(eq(formTemplates.id, id));
   await audit({ actorId: me.id, action: "template.delete", target: id });
   revalidatePath("/admin/templates");
-  revalidatePath("/admin/colleges");
+  revalidatePath("/admin/streams");
   return { ok: true as const };
 }
 
@@ -548,20 +547,20 @@ export async function removeQuestionFromTemplateAction(templateId: string, quest
   return { ok: true as const };
 }
 
-export async function copyTemplateFromCollegeAction(sourceCollegeId: string, newName: string) {
+export async function copyTemplateFromStreamAction(sourceStreamId: string, newName: string) {
   const me = await requireAdmin();
-  const [sourceCollege] = await db
-    .select({ templateId: colleges.templateId })
-    .from(colleges)
-    .where(eq(colleges.id, sourceCollegeId))
+  const [sourceStream] = await db
+    .select({ templateId: streams.templateId })
+    .from(streams)
+    .where(eq(streams.id, sourceStreamId))
     .limit(1);
-  if (!sourceCollege?.templateId) {
-    return { ok: false as const, error: "Source college has no template assigned" };
+  if (!sourceStream?.templateId) {
+    return { ok: false as const, error: "Source stream has no template assigned" };
   }
   const sourceQuestions = await db
     .select()
     .from(templateQuestions)
-    .where(eq(templateQuestions.templateId, sourceCollege.templateId));
+    .where(eq(templateQuestions.templateId, sourceStream.templateId));
   const [newTemplate] = await db
     .insert(formTemplates)
     .values({ name: newName, createdBy: me.id })
@@ -576,20 +575,19 @@ export async function copyTemplateFromCollegeAction(sourceCollegeId: string, new
       })),
     );
   }
-  await audit({ actorId: me.id, action: "template.copy", target: newTemplate.id, meta: { sourceCollegeId } });
+  await audit({ actorId: me.id, action: "template.copy", target: newTemplate.id, meta: { sourceStreamId } });
   revalidatePath("/admin/templates");
   return { ok: true as const, id: newTemplate.id };
 }
 
-export async function assignTemplateToCollegeAction(collegeId: string, templateId: string | null) {
+export async function assignTemplateToStreamAction(streamId: string, templateId: string | null) {
   const me = await requireAdmin();
   await db
-    .update(colleges)
+    .update(streams)
     .set({ templateId: templateId || null, updatedAt: new Date() })
-    .where(eq(colleges.id, collegeId));
-  await audit({ actorId: me.id, action: "college.template_assign", target: collegeId, meta: { templateId } });
-  revalidatePath("/admin/colleges");
-  revalidatePath(`/admin/colleges/${collegeId}`);
+    .where(eq(streams.id, streamId));
+  await audit({ actorId: me.id, action: "stream.template_assign", target: streamId, meta: { templateId } });
+  revalidatePath("/admin/streams");
   revalidatePath("/admin/templates");
   return { ok: true as const };
 }

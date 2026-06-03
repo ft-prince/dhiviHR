@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CollegeEditForm } from "@/components/admin/college-edit-form";
 import { DeleteButton } from "@/components/admin/delete-button";
-import { assignTemplateToCollegeAction, deleteCollegeAction } from "@/lib/admin/actions";
+import { deleteCollegeAction } from "@/lib/admin/actions";
+import Link from "next/link";
 
 interface College {
   id: string;
@@ -13,36 +14,24 @@ interface College {
   contactEmail: string | null;
   contactPhone: string | null;
   notes: string | null;
-  templateId: string | null;
   slug: string;
 }
 
-interface Template {
+interface StreamRow {
   id: string;
   name: string;
+  templateName: string | null;
 }
 
 export function CollegeDetailClient({
   college,
-  templateList,
+  collegeStreams,
 }: {
   college: College;
-  templateList: Template[];
+  collegeStreams: StreamRow[];
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [pending, start] = useTransition();
-  const [templateError, setTemplateError] = useState<string | null>(null);
-
-  function handleTemplateChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value;
-    setTemplateError(null);
-    start(async () => {
-      const result = await assignTemplateToCollegeAction(college.id, value || null);
-      if (!result.ok) setTemplateError("Failed to assign template");
-      else router.refresh();
-    });
-  }
 
   return (
     <div className="rounded-2xl border border-border bg-white p-6 space-y-4">
@@ -62,23 +51,6 @@ export function CollegeDetailClient({
               <span className="text-ink">{college.notes}</span>
             </div>
           )}
-          <div>
-            <span className="text-xs font-semibold text-ink-soft block mb-1">Assessment Template</span>
-            <select
-              defaultValue={college.templateId ?? ""}
-              onChange={handleTemplateChange}
-              disabled={pending}
-              className="rounded-md border border-border bg-white px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="">— Use default template —</option>
-              {templateList.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            {templateError && <p className="mt-1 text-xs text-destructive">{templateError}</p>}
-          </div>
         </div>
         <div className="flex gap-2 shrink-0">
           <Button size="sm" variant="outline" onClick={() => setEditing((v) => !v)}>
@@ -91,6 +63,28 @@ export function CollegeDetailClient({
           />
         </div>
       </div>
+
+      <div>
+        <span className="text-xs font-semibold text-ink-soft block mb-2">Streams</span>
+        {collegeStreams.length === 0 ? (
+          <p className="text-sm text-ink-soft">
+            No streams assigned.{" "}
+            <Link href="/admin/streams" className="text-brand-600 hover:underline">
+              Create one →
+            </Link>
+          </p>
+        ) : (
+          <div className="space-y-1">
+            {collegeStreams.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                <span className="font-medium text-ink">{s.name}</span>
+                <span className="text-ink-soft">{s.templateName ?? "No template"}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {editing && (
         <div className="border-t border-border pt-4">
           <CollegeEditForm college={college} onDone={() => { setEditing(false); router.refresh(); }} />
