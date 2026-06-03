@@ -22,7 +22,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
         tqActive: templateQuestions.active,
         tqOrderIndex: templateQuestions.orderIndex,
         id: questions.id,
-        competency: questions.competency,
+        competencyId: questions.competencyId,
         prompt: questions.prompt,
         options: questions.options,
         active: questions.active,
@@ -33,21 +33,21 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
       .where(eq(templateQuestions.templateId, id))
       .orderBy(asc(templateQuestions.orderIndex), asc(questions.orderIndex)),
     db.select({ id: colleges.id, name: colleges.name }).from(colleges).where(eq(colleges.templateId, id)),
-    db.select({ slug: competencies.slug, label: competencies.label }).from(competencies).where(eq(competencies.active, true)).orderBy(asc(competencies.orderIndex)),
+    db.select({ id: competencies.id, slug: competencies.slug, label: competencies.label }).from(competencies).where(eq(competencies.active, true)).orderBy(asc(competencies.orderIndex)),
   ]);
 
   const inTemplateIds = inTemplate.map((q) => q.id);
   const availableQuestions =
     inTemplateIds.length > 0
       ? await db
-          .select({ id: questions.id, competency: questions.competency, prompt: questions.prompt, active: questions.active })
+          .select({ id: questions.id, competencyId: questions.competencyId, prompt: questions.prompt, active: questions.active })
           .from(questions)
           .where(not(inArray(questions.id, inTemplateIds)))
-          .orderBy(asc(questions.competency), asc(questions.orderIndex))
+          .orderBy(asc(questions.competencyId), asc(questions.orderIndex))
       : await db
-          .select({ id: questions.id, competency: questions.competency, prompt: questions.prompt, active: questions.active })
+          .select({ id: questions.id, competencyId: questions.competencyId, prompt: questions.prompt, active: questions.active })
           .from(questions)
-          .orderBy(asc(questions.competency), asc(questions.orderIndex));
+          .orderBy(asc(questions.competencyId), asc(questions.orderIndex));
 
   const competencyLabels = Object.fromEntries(competencyRows.map((c) => [c.slug, c.label]));
   const rules = (template.rules ?? []) as TemplateRule[];
@@ -65,6 +65,7 @@ export default async function TemplateDetailPage({ params }: { params: Promise<{
           availableQuestions={availableQuestions}
           assignedColleges={assignedColleges}
           competencyLabels={competencyLabels}
+          competencies={competencyRows}
         />
         <hr className="border-border" />
         <TemplateRuleEditor

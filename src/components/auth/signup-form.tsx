@@ -1,6 +1,6 @@
 "use client";
-
-import { useState, useTransition } from "react";
+export const dynamic = "force-dynamic";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { signupAction, studentSignupAction } from "@/lib/auth/actions";
 
 
 export function SignupForm({ variant = "public", streams = [], }: { variant?: "public" | "student", streams: { id: string; name: string }[] }) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+  if (!isMounted) return null;
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();

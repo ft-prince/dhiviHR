@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { streams } from "@/lib/db/schema";
 import { SignupForm } from "@/components/auth/signup-form";
 
+const dynamic = "force-dynamic";
+
 export default async function SignupPage() {
   const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams);
   return (

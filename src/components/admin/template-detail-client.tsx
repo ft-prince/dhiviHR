@@ -27,7 +27,8 @@ interface InTemplateQuestion {
   tqActive: boolean;
   tqOrderIndex: number;
   id: string;
-  competency: string;
+  streamId: string;
+  competencyId: string;
   prompt: string;
   options: unknown;
   active: boolean;
@@ -36,7 +37,7 @@ interface InTemplateQuestion {
 
 interface AvailableQuestion {
   id: string;
-  competency: string;
+  competencyId: string;
   prompt: string;
   active: boolean;
 }
@@ -52,6 +53,7 @@ interface Props {
   availableQuestions: AvailableQuestion[];
   assignedColleges: { id: string; name: string }[];
   competencyLabels: Record<string, string>;
+  competencies: { id: string; slug: string; label: string }[];
 }
 
 // ── Inline question card (in-template list) ──────────────────────────────────
@@ -65,7 +67,7 @@ function InTemplateCard({
   q: InTemplateQuestion;
   templateId: string;
   competencyLabels: Record<string, string>;
-  competencies: { slug: string; label: string }[];
+  competencies: {id: string; slug: string; label: string }[];
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -84,7 +86,7 @@ function InTemplateCard({
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex-1 min-w-0">
           <span className="text-xs font-semibold text-brand-600">
-            {competencyLabels[q.competency] ?? q.competency}
+            {competencyLabels[q.competencyId] ?? q.competencyId}
           </span>
           <p className="mt-0.5 text-sm text-ink break-words">{q.prompt}</p>
           {mode === "view" && (
@@ -131,7 +133,8 @@ function InTemplateCard({
           <QuestionForm
             initial={{
               id: q.id,
-              competency: q.competency,
+              streamId: q.streamId,
+              competencyId: q.competencyId,
               prompt: q.prompt,
               options: q.options as Option[],
               orderIndex: q.orderIndex,
@@ -156,7 +159,7 @@ function NewQuestionPanel({
 }: {
   templateId: string;
   nextIndex: number;
-  competencies: { slug: string; label: string }[];
+  competencies: {id:string; slug: string; label: string }[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -208,7 +211,7 @@ function AvailableRow({
     <div className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-brand-50/30">
       <div className="flex-1 min-w-0">
         <span className="text-xs font-semibold text-brand-600">
-          {competencyLabels[q.competency] ?? q.competency}
+          {competencyLabels[q.competencyId] ?? q.competencyId}
         </span>
         <p className="mt-0.5 text-sm text-ink line-clamp-2">{q.prompt}</p>
       </div>
@@ -227,19 +230,19 @@ export function TemplateDetailClient({
   availableQuestions,
   assignedColleges,
   competencyLabels,
+  competencies
 }: Props) {
   const router = useRouter();
   const [editingMeta, setEditingMeta] = useState(false);
   const [filter, setFilter] = useState("");
   const [deletingTemplate, startDeleteTemplate] = useTransition();
 
-  const competencies = Object.entries(competencyLabels).map(([slug, label]) => ({ slug, label }));
-
+  
   const filteredAvailable = availableQuestions.filter(
     (q) =>
       !filter ||
       q.prompt.toLowerCase().includes(filter.toLowerCase()) ||
-      q.competency.includes(filter.toLowerCase()),
+      q.competencyId.includes(filter.toLowerCase()),
   );
 
   function handleDeleteTemplate() {

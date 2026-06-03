@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/admin/page-header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { getPlatformStats, getLevelDistribution, getRevenueByDay } from "@/lib/admin/stats";
-import { READINESS_BANDS } from "@/lib/utils";
+import { READINESS_LEVEL } from "@/lib/utils";
 import { COMPETENCY_LABELS } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
@@ -32,13 +32,13 @@ export default async function AdminAnalyticsPage() {
           <h2 className="font-display font-bold text-lg text-ink">Readiness Distribution</h2>
           <p className="text-xs text-ink-soft">Share of completed assessments per band.</p>
           <div className="mt-6 space-y-4">
-            {READINESS_BANDS.map((b) => {
-              const n = distMap.get(b.level) ?? 0;
+            {READINESS_LEVEL.map((level) => {
+              const n = distMap.get(level.level) ?? 0;
               const pct = Math.round((n / distTotal) * 100);
               return (
-                <div key={b.level}>
+                <div key={level.level}>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="font-medium">{b.label}</span>
+                    <span className="font-medium">{level.label}</span>
                     <span className="text-ink-soft">{n} ({pct}%)</span>
                   </div>
                   <div className="h-3 rounded-full bg-brand-50 overflow-hidden">

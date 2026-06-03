@@ -14,6 +14,12 @@ export interface AssessmentScore{
   track: string;
 }
 
+export const COMPETENCY_LABELS: Record<string, string> = {
+  "critical_gap": "Critical Gap",
+  "development_gap": "Development Gap",
+  "strength": "Strength",
+}
+
 
 export interface ScoredResponse {
   /** Now a plain string — any slug from the competencies table */

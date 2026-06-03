@@ -1,8 +1,6 @@
-
-import "server-only";  
+import "server-only";
 import { neon, Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import ws from "ws";
 import * as schema from "./schema";
 
 const url = process.env.DATABASE_URL;
@@ -10,12 +8,21 @@ if (!url) {
   throw new Error("DATABASE_URL is not set");
 }
 
-if (typeof window === "undefined") {
-  neonConfig.webSocketConstructor = ws;
-}
+// Lazy initialization function
+let dbInstance: ReturnType<typeof drizzle<typeof schema>>;
 
-const pool = new Pool({connectionString: url});
+export const getDb = () => {
+  if (!dbInstance) {
+    if (typeof window === "undefined") {
+      const ws = require("ws");
+      neonConfig.webSocketConstructor = ws;
+    }
+    
+    const pool = new Pool({ connectionString: url });
+    dbInstance = drizzle(pool, { schema });
+  }
+  return dbInstance;
+};
 
-const sql = neon(url);
-export const db = drizzle(pool, { schema });
-export { schema };
+// Export the instance as a getter or just use getDb() in your server actions
+export const db = getDb();
