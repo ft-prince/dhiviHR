@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
-      <body>{children}</body>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

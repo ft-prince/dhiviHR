@@ -167,9 +167,10 @@ function ExpandBtn({ label, dark }: { label: string; dark?: boolean }) {
    ══════════════════════════════════════════════════════════════════ */
 export function LandingPage({ user }: LandingPageProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [time, setTime] = useState(getLondonTime());
+  const [time, setTime] = useState("");
 
   useEffect(() => {
+    setTime(getLondonTime());
     const id = setInterval(() => setTime(getLondonTime()), 1000);
     return () => clearInterval(id);
   }, []);
