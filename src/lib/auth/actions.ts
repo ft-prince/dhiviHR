@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users, accessCodes, streams } from "@/lib/db/schema";
 import { signIn, signOut } from "@/lib/auth";
+import { AuthError } from "next-auth";
 import { signupSchema, studentSignupSchema, loginSchema } from "./validators";
 import { rateLimit, rlKey } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
@@ -58,8 +59,11 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
 
   try {
     await signIn("credentials", { email, password, redirect: false });
-  } catch {
-    /* signIn throws NEXT_REDIRECT in some flows — swallow */
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { ok: false, error: "Auto-login failed. Please log in manually." };
+    }
+    throw error;
   }
 
   return { ok: true, redirectTo: "/dashboard" };
@@ -121,8 +125,11 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
 
   try {
     await signIn("credentials", { email, password, redirect: false });
-  } catch {
-    /* noop */
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { ok: false, error: "Auto-login failed. Please log in manually." };
+    }
+    throw error;
   }
 
   return { ok: true, redirectTo: "/dashboard" };
@@ -141,8 +148,11 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
 
   try {
     await signIn("credentials", { ...parsed.data, redirect: false });
-  } catch {
-    return { ok: false, error: "Invalid email or password" };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { ok: false, error: "Invalid email or password" };
+    }
+    throw error;
   }
 
   const found = await db
