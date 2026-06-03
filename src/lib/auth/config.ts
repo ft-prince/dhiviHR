@@ -13,6 +13,7 @@ const credentialsSchema = z.object({
 });
 
 export const authConfig: NextAuthConfig = {
+  trustHost: true,
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
