@@ -27,6 +27,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/competencies", label: "Competencies", icon: Layers     },
   { href: "/admin/templates",    label: "Templates",    icon: FileText    },
   { href: "/admin/activity",  label: "Activity",   icon: BarChart3       },
+  { href: "/admin/trial_questions", label: "Trial Questions", icon: ShieldCheck },
 ];
 
 const SUPER_NAV: NavItem[] = [

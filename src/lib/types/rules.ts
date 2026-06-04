@@ -66,3 +66,19 @@ export function evaluateRules(rules: TemplateRule[], ctx: RuleContext): Template
   }
   return null;
 }
+
+export interface Option{
+  label: string;
+  value: string;
+}
+
+export interface TrialQuestion {
+  id: string;
+  sectionId: string;
+  prompt: string;
+  options: Option[];
+  active: boolean;
+  orderIndex: number;
+  hint: string | null;
+}
+

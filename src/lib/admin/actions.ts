@@ -17,6 +17,7 @@ import {
   templateQuestions,
   competencies,
   streams,
+  trial_questions
 } from "@/lib/db/schema";
 import { audit } from "@/lib/audit";
 import { auth } from "@/lib/auth";
@@ -378,6 +379,83 @@ export async function deleteQuestionAction(id: string) {
   revalidatePath("/admin/questions");
   return { ok: true as const };
 }
+
+// ─── Trial Questions ────────────────────────────────────────────────────────────────────
+
+const trialQuestionSchema = z.object({
+  id: z.string().uuid().optional(),
+  sectionId: z.string().uuid(),
+  prompt: z.string().min(5),
+  options: z.array(
+    z.object({
+      label: z.string().min(1),
+      value: z.string().min(1),
+    })
+  ).min(1).max(5),
+  active: z.boolean().default(true),
+  orderIndex: z.coerce.number().int().min(0).default(0),
+})
+
+export async function upsertTrialQuestionAction(input: z.infer<typeof trialQuestionSchema>){
+  const me = await requireAdmin();
+  const parsed = trialQuestionSchema.safeParse(input);
+  if (!parsed.success) return {ok: false as const, error: parsed.error.issues[0].message};
+  const data = parsed.data;
+
+  if(data.id){
+    await db
+    .update(trial_questions)
+    .set({
+      sectionId: data.sectionId,
+      prompt: data.prompt,
+      options: data.options,
+      active: data.active,
+      orderIndex: data.orderIndex,
+    })
+    .where(eq(trial_questions.id, data.id));
+    await audit({actorId: me.id, action: "trial_question.update", target: data.id});
+    revalidatePath("/admin/trial/");
+    return {ok: true as const, id: data.id};
+  }else{
+    const [row] = await db
+    .insert(trial_questions)
+    .values({
+      sectionId: data.sectionId,
+      prompt: data.prompt,
+      options: data.options,
+      active: data.active,
+      orderIndex: data.orderIndex,
+    })
+    .returning();
+    await audit({actorId: me.id, action: "trial_question.create", target: row.id});
+    revalidatePath("/admin/trial/");
+    return {ok: true as const, id: row.id};
+  }
+}
+
+export async function toggleTrialQuestionActiveAction(id: string){
+  const me = await requireAdmin();
+  const [row] = await db.select().from(trial_questions).where(eq(trial_questions.id, id)).limit(1);
+  if (!row) return {ok: false as const, error: "Not found"};
+  await db.update(trial_questions).set({active: !row.active}).where(eq(trial_questions.id, id));
+  await audit({actorId: me.id, action: "trial_question.toggle", target: id, meta: {active: !row.active}});
+  revalidatePath("/admin/trial/");
+  return {ok: true as const};
+}
+
+export async function deleteTrialQuestionAction(id: string){
+  const me = await requireAdmin();
+  try{
+    await db.delete(trial_questions).where(eq(trial_questions.id, id));
+  }catch(error: unknown){
+    const message = error instanceof Error ? error.message : "Failed to delete trial question";
+    return {ok: false as const, error: message};
+  }
+  await audit({actorId: me.id, action: "trial_question.delete", target: id});
+  revalidatePath("/admin/trial/");
+  return {ok: true as const};
+}
+
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 

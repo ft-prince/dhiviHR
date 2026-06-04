@@ -14,6 +14,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { Option } from "@/lib/types/rules";
 
 export const userRole = pgEnum("user_role", [
   "student",
@@ -55,6 +56,16 @@ export const competencies = pgTable("competencies", {
   orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const trial_questions = pgTable("trial_questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sectionId: uuid("section_id").references(() => sections.id, { onDelete: "set null" }),
+  prompt: text("prompt").notNull(),
+  options: jsonb("options").$type<Option[]>().notNull().default([]),
+  active: boolean("active").notNull().default(true),
+  orderIndex: integer("order_index").notNull().default(0),
+  hint: text("hint"),
 });
 
 export const users = pgTable("users", {
