@@ -9,7 +9,7 @@ const dynamic = "force-dynamic";
 
 export default async function SignupPage() {
   const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams);
-  console.log("All streams", allStreams);
+  
   return (
     <main className="min-h-screen grid place-items-center bg-brand-50 p-6">
       <div className="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-8 shadow-card">
