@@ -113,8 +113,6 @@ export async function verifyPaymentAction(input: z.infer<typeof verifySchema>) {
           pdfBuffer: reportPdfBuffer,
           pdfFilename: `dhiviHR-report-${paymentRecord.assessmentId}.pdf`
         });
-
-        console.log(`Report email successfully sent to ${targetEmail}`);
       }
     }
   } catch (emailError) {

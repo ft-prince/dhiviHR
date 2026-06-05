@@ -240,12 +240,10 @@ export async function submitAssessmentAction(input: z.infer<typeof submitSchema>
 
 export async function getActiveQuestionsAction() {
   try {
-    console.log("=== ACTION: ENTERED getActiveQuestionsAction ===");
     const user = await requireUser();
-    console.log("=== ACTION: requireUser FOUND ===", user?.id);
     
     const questionsList = await resolveAssessmentQuestions(user.id);
-    console.log("=== ACTION: resolveAssessmentQuestions FOUND ===", questionsList?.length);
+
     return questionsList;
   } catch (err) {
     console.error("=== ACTION: CRASHED SILENTLY ===", err);

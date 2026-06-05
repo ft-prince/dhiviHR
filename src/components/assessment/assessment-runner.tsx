@@ -53,7 +53,7 @@ export function AssessmentRunner({ assessmentId, questions }: { assessmentId: st
     <div>
       <div className="mb-6">
         <div className="flex justify-between text-xs font-medium text-ink-muted mb-2">
-          <span>{q.competency}</span>
+          {/* <span>{q.competency}</span> */}
           <span>Question {idx + 1} of {questions.length}</span>
         </div>
         <div className="h-2 rounded-full bg-brand-50 overflow-hidden">
@@ -62,7 +62,7 @@ export function AssessmentRunner({ assessmentId, questions }: { assessmentId: st
       </div>
 
       <div className="rounded-2xl border border-border bg-white shadow-soft p-5 sm:p-8">
-        <h2 className="display-headline text-xl sm:text-2xl md:text-3xl break-words">{q.prompt}</h2>
+        <h2 className="normal-case text-xl sm:text-2xl md:text-3xl break-words">{q.prompt}</h2>
         <div className="mt-6 space-y-3">
           {q.options.map((o) => {
             const selected = answers[q.id] === o.id;

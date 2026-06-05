@@ -162,7 +162,6 @@ export async function generatePdfData(result : AssessmentScore, userName: string
     try{
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-        console.log("[ai_report] Calling Groq with model:", GROQ_MODEL);
         const response = await fetch(GROK_API_URL, {
             method: "POST",
             headers: {
@@ -181,7 +180,6 @@ export async function generatePdfData(result : AssessmentScore, userName: string
             signal: controller.signal
         }); 
         clearTimeout(timeoutId);
-        console.log("[ai_report] Response status:", response.status);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP Error ${response.status}: ${errorText}`);
@@ -201,7 +199,6 @@ export async function generatePdfData(result : AssessmentScore, userName: string
                 content = content.substring(4);
         }
     }
-    console.log("[ai_report] Raw content:", content?.substring(0, 200));
     return JSON.parse(content.trim());
 }catch(exc:any){
     if(exc.name === "AbortError"){

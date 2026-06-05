@@ -11,7 +11,6 @@ async function main() {
   `;
   for (const r of rows as Array<{ email: string; role: string; password_hash: string }>) {
     const ok = await bcrypt.compare("ChangeMe123!", r.password_hash);
-    console.log(`${r.email} role=${r.role} hash_ok=${ok}`);
   }
 }
 main().catch((e) => { console.error(e); process.exit(1); });

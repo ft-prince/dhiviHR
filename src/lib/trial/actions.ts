@@ -33,8 +33,6 @@ export async function submitTrialResponsesAction(input: z.infer<typeof submitSch
   const score = entries.reduce((sum, [_questionId, responseValue]) => { return sum + Number(responseValue)}, 0);
 
   const average = score / totalQuestions;
-  console.log("Trial assessment score:", average);
-  console.log("Trial responses submitted:", input);
 
   return {ok: true, score: average};
 }

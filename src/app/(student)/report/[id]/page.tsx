@@ -83,7 +83,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
               <div className="text-xs font-bold uppercase tracking-widest text-brand-600">Preview</div>
-              <div className="mt-2 display-headline text-2xl sm:text-3xl">{band.label}</div>
+              <div className="mt-2 display-headline text-2xl sm:text-3xl">{paid ? band.label : "████████"}</div>
               <div className="mt-1 text-ink-muted">Total Score</div>
               <div className="mt-1 display-headline text-4xl sm:text-5xl text-brand-600">██ / 100</div>
             </div>
@@ -122,8 +122,8 @@ function FullReport({
   const getGapStyling = (gap: string) => {
     switch (gap) {
       case "strength": return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Strength" };
-      case "development_gap": return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Development Gap" };
-      default: return { bar: "bg-brand-500", text: "text-brand-700 bg-brand-50", label: "Critical Gap" };
+      case "development_gap": return { bar: "bg-amber-500", text: "text-amber-700 bg-amber-50", label: "Development Gap" };
+      default: return { bar: "bg-red-500", text: "text-red-700 bg-red-50", label: "Critical Gap" };
     }
   };
   return (
@@ -179,7 +179,7 @@ function FullReport({
                 {styles.label}
               </span>
               {/* This is now completely safe from throwing a "Cannot read properties of undefined" error! */}
-              <span className="text-ink-muted font-mono font-medium">{averageValue.toFixed(2)} / 4.0</span>
+              <span className="text-ink-muted font-mono font-medium">{averageValue} / 4.0</span>
             </div>
           </div>
           <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
