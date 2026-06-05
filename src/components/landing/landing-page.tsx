@@ -7,6 +7,7 @@ import {
   ArrowRight, Clock, Menu, X, CheckCircle2,
   BarChart3, MessageSquare, Users, Zap, Target,
   GraduationCap, Building2, ChevronRight,
+  ArrowRightIcon,
 } from "lucide-react";
 import { Shader, Swirl, ChromaFlow, FlutedGlass, FilmGrain } from "shaders/react";
 import Image from "next/image";
@@ -299,15 +300,23 @@ export function LandingPage({ user }: LandingPageProps) {
             </h1>
             <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
               <TextRollButton label="Take the Assessment" green href="/signup" className="pl-5 sm:pl-6" />
-              <div
-                className="inline-flex items-center gap-2.5 bg-white px-3 sm:px-4 py-2 rounded-[4px] cursor-default"
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)", transition: "box-shadow 300ms ease" }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.12)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)")}
-              >
-                <StarburstIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: GREEN }} />
-                <span className="text-[13px] sm:text-[14px] font-medium text-gray-900">Trusted by Colleges</span>
-                <span className="text-[10px] sm:text-[11px] text-white px-1.5 sm:px-2 py-0.5 rounded" style={{ background: GREEN }}>Verified</span>
+              <div>
+                <a href="/trial" className="group rounded-3xl inline-flex items-center gap-2.5 bg-white px-6 py-2.5 "
+                style={{
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  transition: "box-shadow 300ms ease",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                    "0 4px 16px rgba(0,0,0,0.12)")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLAnchorElement).style.boxShadow =
+                    "0 2px 8px rgba(0,0,0,0.08)")
+                }>
+                <span className="text-[13px] sm:text-[14px] font-medium text-gray-900">Take trial</span>
+                <ArrowRightIcon className="w-4 h-4 text-brand-500 transition-transform duration-300 ease-out group-hover:translate-x-1" />
+                </a>
               </div>
             </div>
           </div>

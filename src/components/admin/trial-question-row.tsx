@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { QuestionForm } from "@/components/admin/question-form";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { upsertTrialQuestionAction, toggleTrialQuestionActiveAction, deleteTrialQuestionAction } from "@/lib/admin/actions";
+import { TrialQuestionForm } from "@/components/admin/trial-question-form";
 
 export function TrialQuestionRow({
     id,
@@ -81,20 +82,22 @@ export function TrialQuestionRow({
 
                 {editing && (
                     <div className="mt-4 border-t border-border pt-4">
-                        {/* <TrialQuestionForm
-                            id={id}
-                            sectionId={sectionId}
-                            prompt={prompt}
-                            options={options}
-                            orderIndex={orderIndex}
-                            active={active}
-                            hint={hint}
-                            sections={sections}
-                            onSubmit={() => {
-                                setEditing(false);
-                                router.refresh();
-                            }}
-                        /> */}
+                        <TrialQuestionForm
+                            initial={{
+                            id: id,
+                            sectionId: sectionId,
+                            prompt: prompt,
+                            options: options,
+                            orderIndex: orderIndex,
+                            active: active,
+                            hint: hint,
+                        }}
+                        onDone={() => {
+                            setEditing(false);
+                            router.refresh();
+                        }}
+                        sections={sections}
+                    />
                     </div>
                 )}
             </div>

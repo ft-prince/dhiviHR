@@ -5,6 +5,7 @@ import {z} from "zod";
 import {eq, asc, and, desc, isNotNull} from "drizzle-orm"
 import {trial_questions} from "@/lib/db/schema";
 import { TrialQuestion } from "@/lib/types/rules";
+import { scoreAssessment } from "../scoring";
 
 const responseSchema = z.object({
   questionId: z.string().uuid(),
@@ -12,10 +13,7 @@ const responseSchema = z.object({
   value: z.string(),
 })
 
-const submitSchema = z.object({
-  questionIds: z.array(z.string().uuid()),
-  responses: z.array(responseSchema),
-})
+const submitSchema = z.record(z.string().uuid(), z.string());
 
 export async function getTrialQuestionsAction(): Promise<TrialQuestion[]> {
     const questions = await db.select()
@@ -27,8 +25,16 @@ export async function getTrialQuestionsAction(): Promise<TrialQuestion[]> {
 }
 
 export async function submitTrialResponsesAction(input: z.infer<typeof submitSchema>){
-  // for now, just log the input. In the future, this will save the responses to the database and trigger any necessary workflows (e.g. scoring, notifications, etc.)
-  // call calculate trial score function
-  // return score to frontend to display to candidate, done
+  const entries = Object.entries(input);
+  const totalQuestions = entries.length;
+
+  if (totalQuestions === 0) return {ok: false, error: "No responses provided."};
+  
+  const score = entries.reduce((sum, [_questionId, responseValue]) => { return sum + Number(responseValue)}, 0);
+
+  const average = score / totalQuestions;
+  console.log("Trial assessment score:", average);
   console.log("Trial responses submitted:", input);
+
+  return {ok: true, score: average};
 }

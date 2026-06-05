@@ -6,6 +6,7 @@ import {PageHeader} from "@/components/admin/page-header";
 import { Pagination } from "@/components/admin/pagination";
 import { TrialQuestionsFilterBar } from "@/components/admin/trial-questions-filter-bar";
 import { TrialQuestionRow } from "@/components/admin/trial-question-row";
+import { TrialQuestionCreatePanel } from "@/components/admin/trial-question-create-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function AdminTrialQuestionsPage({
         <PageHeader
             title="Trial Questions"
             description="Edit trial questions prompts, options, and order."
+            actions = {<TrialQuestionCreatePanel sections={sectionRows} />}
         />
         <div className="space-y-4">
            <TrialQuestionsFilterBar filters={{ q, sectionId: sectionFilter, active: activeFilter }} sections={sectionRows} />

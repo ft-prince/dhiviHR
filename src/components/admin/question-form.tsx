@@ -138,7 +138,7 @@ export function QuestionForm({ initial, createAction, onDone, competencies }: Qu
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-semibold text-ink-soft">Options (weight 0–4)</label>
+          <label className="text-xs font-semibold text-ink-soft">Options (weight 1–4)</label>
           {options.length < 6 && (
             <button type="button" onClick={addOption} className="text-xs text-brand-600 font-semibold hover:underline">
               + Add option
@@ -175,7 +175,7 @@ export function QuestionForm({ initial, createAction, onDone, competencies }: Qu
             </div>
           ))}
         </div>
-        <p className="mt-1 text-xs text-ink-soft">Weight: 0 = lowest, 4 = highest readiness signal.</p>
+        <p className="mt-1 text-xs text-ink-soft">Weight: 1 = lowest, 4 = highest readiness signal.</p>
       </div>
 
       <div className="flex items-center gap-2">

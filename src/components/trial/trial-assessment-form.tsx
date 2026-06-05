@@ -1,9 +1,11 @@
 "use client";
 
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { getTrialQuestionsAction} from "@/lib/trial/actions";
 import { TrialQuestion } from "@/lib/types/rules";
+import { SiteHeader } from '../marketing/site-header';
+import { TrialAssessmentRunner } from './trial-assessment-runner';
 
 const INSTRUCTIONS = [
     "This assessment trial is designed to evaluate your skills and suitability for the role you have applied for.",
@@ -23,24 +25,34 @@ export default function TrialAssessmentForm(){
     }
 
   return (
-    !instructionsRead ? (
-    <div className="flex items-center justify-center h-screen">
-      <h1 className="text-4xl font-bold">Welcome to the dhiviHR assessment trial</h1>
-      <p>Read these instructions carefully:</p>
-      <p>Instructions:</p>
+    <>
+    <SiteHeader solid />
+    <main className="px-4 sm:px-8 md:px-16 lg:px-24 pt-20 sm:pt-24 pb-16">
+    {!instructionsRead ? (
+    <div className="max-w-3xl">
+      <h1 className="display-headline text-2xl sm:text-3xl md:text-4xl normal-case">Welcome to the dhiviHR Assessment Trial</h1>
+      <p className="text-ink-soft mt-1 mb-8 text-base sm:text-lg">Read the instructions carefully:</p>
+      {/* <p className="font-bold mt-4">Instructions:</p> */}
       {INSTRUCTIONS.map((instruction, index) => (
-        <p key={index}>{index + 1}. {instruction}</p>
+        <p key={index} className="mt-2 text-ink text-base sm:text-lg">
+          {index + 1}. {instruction}
+        </p>
       ))}
       <button onClick={() => setInstructionsRead(true)}
-        className="flex flex-row items-center border border-brand-500"
-        >Start trial <ArrowRight className="w-4 h-4"/></button>
+        className="mt-8 px-5 py-2 rounded-full text-white text-xl bg-brand-500 flex flex-row gap-2 hover:bg-brand-600 items-center border border-brand-500"
+        >Start trial <ArrowRight className="w-5 h-5"/></button>
     </div>
   ):(
     <div>
-    <button onClick={() => setInstructionsRead(false)}>back</button>
-    <div>Assessment</div>
+    <button onClick={() => {setInstructionsRead(false); handleStartTrial();}}
+      className="mb-4 ml-4 sm:ml-0 px-3 py-2 rounded-2xl border border-black flex flex-row gap-0 items-center hover:border-brand-600 hover:text-brand-600"
+      ><ChevronLeft/>Back</button>
+      <h2 className="text-xl sm:text-2xl font-bold ml-4">Your CRAFTe Driving Test</h2>
+      <div className="ml-4">Answer the following questions appropriately:</div>  
+    <div><TrialAssessmentRunner questions={questions}/></div>
     </div>
-  )
-
+  )}
+  </main>
+</>
   )
 }
