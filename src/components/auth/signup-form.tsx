@@ -93,8 +93,8 @@ export function SignupForm({ variant = "public", streams: initialStreams = [] }:
         </select>
       </div>
       <div>
-        <Label htmlFor="phone">Phone (optional)</Label>
-        <Input id="phone" name="phone" type="tel" />
+        <Label htmlFor="phone">Phone</Label>
+        <Input id="phone" name="phone" type="tel" required />
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
