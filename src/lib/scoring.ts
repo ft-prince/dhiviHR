@@ -11,6 +11,8 @@ export interface AssessmentScore{
   competencyBreakdown: Record<string, CompetencyDetail>;
   level: ReadinessTier;
   levelLabel: string;
+  /** One-line message shown under the readiness tier on the report. */
+  subHeading: string;
   track: string;
 }
 
@@ -18,6 +20,46 @@ export const COMPETENCY_LABELS: Record<string, string> = {
   "critical_gap": "Critical Gap",
   "development_gap": "Development Gap",
   "strength": "Strength",
+}
+
+/* ─── Readiness tier classification (overall average, 1–5 scale) ───
+   Thresholds per the CRAFTe spec:
+     ≥ 3.75            → Future Ready
+     3.26 – 3.75       → Accelerator
+     2.51 – 3.25       → Practitioner
+     below 2.5         → Learner                                      */
+export interface TierInfo {
+  level: ReadinessTier;
+  label: string;
+  subHeading: string;
+  /** Minimum overall average (inclusive) that lands in this tier. */
+  min: number;
+}
+
+export const READINESS_TIERS: readonly TierInfo[] = [
+  { level: "future_ready", label: "Future Ready", min: 3.75, subHeading: "You've arrived. Your report is the evidence that backs every room you walk into." },
+  { level: "accelerator", label: "Accelerator", min: 3.26, subHeading: "You're close to exceptional. Your report shows you exactly what's left." },
+  { level: "practitioner", label: "Practitioner", min: 2.51, subHeading: "The ability is real. Your report tells you what's blocking it." },
+  { level: "learner", label: "Learner", min: 0, subHeading: "You know where you want to go. Your report shows you exactly how to get there." },
+] as const;
+
+export function tierForAverage(overallAverage: number): TierInfo {
+  return READINESS_TIERS.find((t) => overallAverage >= t.min) ?? READINESS_TIERS[READINESS_TIERS.length - 1];
+}
+
+/** Tier sub-heading message for a stored readiness level (e.g. "future_ready"). */
+export function tierSubHeadingForLevel(level: string): string {
+  return READINESS_TIERS.find((t) => t.level === level)?.subHeading ?? "";
+}
+
+/* ─── Per-competency gap classification (pillar average, 1–5 scale) ─
+     ≥ 3.70            → Strength
+     2.50 – 3.69       → Development gap
+     below 2.50        → Critical gap                                 */
+export function gapForAverage(average: number): CompetencyGap {
+  if (average >= 3.70) return "strength";
+  if (average >= 2.50) return "development_gap";
+  return "critical_gap";
 }
 
 
@@ -53,15 +95,7 @@ export function scoreAssessment(responses: ScoredResponse[]): AssessmentScore {
     // Average = Total score for that assessment divided by total questions in that competency
     const average = +(sum / items.length).toFixed(2);
 
-    // Classification mapping for competencies
-    let gap: CompetencyGap = "critical_gap";
-    if (average >= 3.25) {
-      gap = "strength";
-    } else if (average >= 1.75) {
-      gap = "development_gap";
-    }
-
-    breakdown[comp] = { average, gap };
+    breakdown[comp] = { average, gap: gapForAverage(average) };
   }
 
   // 2. Calculate Overall Average 
@@ -70,28 +104,14 @@ export function scoreAssessment(responses: ScoredResponse[]): AssessmentScore {
   const overallAverage = comps.length > 0 ? +(totalCompetencyAverages / comps.length).toFixed(2) : 0;
 
   // 3. Classify Overall Readiness Tier
-  let level: ReadinessTier = "learner";
-  let levelLabel = "Learner";
-
-  if (overallAverage >= 3.50) {
-    level = "future_ready";
-    levelLabel = "Future Ready";
-  } else if (overallAverage >= 2.75) {
-    level = "accelerator";
-    levelLabel = "Accelerator";
-  } else if (overallAverage >= 2.00) {
-    level = "practitioner";
-    levelLabel = "Practitioner";
-  } else {
-    level = "learner";
-    levelLabel = "Learner";
-  }
+  const tier = tierForAverage(overallAverage);
 
   return {
     total: overallAverage, // This represents your overall average score (e.g., 3.12)
     competencyBreakdown: breakdown,
-    level,
-    levelLabel,
+    level: tier.level,
+    levelLabel: tier.label,
+    subHeading: tier.subHeading,
     track: "default", // Adapt or map this to whatever your layout expects for 'track'
   };
 }

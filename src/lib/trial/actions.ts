@@ -5,7 +5,7 @@ import {z} from "zod";
 import {eq, asc, and, desc, isNotNull} from "drizzle-orm"
 import {trial_questions} from "@/lib/db/schema";
 import { TrialQuestion } from "@/lib/types/rules";
-import { scoreAssessment } from "../scoring";
+import { bandForTrialScore, TRIAL_ANSWER_MIN, TRIAL_ANSWER_MAX, type TrialLevel } from "./scoring";
 
 const responseSchema = z.object({
   questionId: z.string().uuid(),
@@ -24,15 +24,27 @@ export async function getTrialQuestionsAction(): Promise<TrialQuestion[]> {
     return questions as TrialQuestion[];
 }
 
-export async function submitTrialResponsesAction(input: z.infer<typeof submitSchema>){
+export type SubmitTrialResult =
+  | { ok: true; total: number; count: number; level: TrialLevel; label: string }
+  | { ok: false; error: string };
+
+export async function submitTrialResponsesAction(
+  input: z.infer<typeof submitSchema>,
+): Promise<SubmitTrialResult> {
   const entries = Object.entries(input);
-  const totalQuestions = entries.length;
+  const count = entries.length;
 
-  if (totalQuestions === 0) return {ok: false, error: "No responses provided."};
-  
-  const score = entries.reduce((sum, [_questionId, responseValue]) => { return sum + Number(responseValue)}, 0);
+  if (count === 0) return { ok: false, error: "No responses provided." };
 
-  const average = score / totalQuestions;
+  let total = 0;
+  for (const [, responseValue] of entries) {
+    const n = Number(responseValue);
+    if (!Number.isInteger(n) || n < TRIAL_ANSWER_MIN || n > TRIAL_ANSWER_MAX) {
+      return { ok: false, error: "Each answer must be between 1 and 5." };
+    }
+    total += n;
+  }
 
-  return {ok: true, score: average};
+  const band = bandForTrialScore(total);
+  return { ok: true, total, count, level: band.level, label: band.label };
 }

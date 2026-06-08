@@ -2,6 +2,7 @@ import { and, eq, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { assessments, scores, score_competencies, competencies, users as usersT, streams } from "@/lib/db/schema";
 import { READINESS_LEVEL } from "@/lib/utils";
+import { tierSubHeadingForLevel } from "@/lib/scoring";
 import { generateFullReport, type ReportData, type CompetencyScore } from "@/lib/pdf/layout";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,7 @@ export async function generateReportPdfBuffer({ assessmentId, user }: GenerateRe
     totalScore: score.total,
     readinessLevel: score.level,
     readinessLabel: band.label,
+    subHeading: tierSubHeadingForLevel(score.level),
     competencies: competencyScores,
     reportJson: assessment.reportJson as Record<string, unknown> | null,
   };

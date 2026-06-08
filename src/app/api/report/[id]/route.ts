@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { assessments, scores, score_competencies, competencies, users, streams } from "@/lib/db/schema";
 import { isAssessmentPaid } from "@/lib/payment/actions";
 import { READINESS_LEVEL } from "@/lib/utils";
+import { tierSubHeadingForLevel } from "@/lib/scoring";
 import { generateFullReport, type ReportData, type CompetencyScore } from "@/lib/pdf/layout";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     totalScore: scoreRow.total,
     readinessLevel: scoreRow.level,
     readinessLabel: band.label,
+    subHeading: tierSubHeadingForLevel(scoreRow.level),
     competencies: competencyScores,
     reportJson: assessmentRow.reportJson as Record<string, unknown> | null,
   };

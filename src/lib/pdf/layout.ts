@@ -35,6 +35,8 @@ export interface ReportData {
   totalScore: number;
   readinessLevel: string;
   readinessLabel: string;
+  /** One-line tier message; used on the cover when no AI description exists. */
+  subHeading?: string;
   competencies: CompetencyScore[];
   reportJson?: Record<string, unknown> | null;
 }
@@ -137,7 +139,7 @@ function renderCoverPage(doc: jsPDF, data: ReportData): void {
 
   drawReadinessBand(doc, MARGIN + 10, 235, CONTENT_W - 20, data.totalScore, data.readinessLevel);
 
-  const coverDesc = (data.reportJson as any)?.coverPage?.oneLineDescription;
+  const coverDesc = (data.reportJson as any)?.coverPage?.oneLineDescription ?? data.subHeading;
   if (coverDesc) {
     doc.setFont(FONT_BODY, "normal");
     doc.setFontSize(9);

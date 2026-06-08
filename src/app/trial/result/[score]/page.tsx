@@ -1,9 +1,19 @@
-export default async function TrialResultPage({params} : {params: {score: string}}) {
-    const {score} = await params;
-    return(
-        <div className="px-4 sm:px-8 md:px-16 lg:px-24 pt-20 sm:pt-24 pb-16">
-            <h1 className="display-headline text-2xl sm:text-3xl md:text-4xl normal-case">Your dhiviHR Assessment Trial Result</h1>
-            <p className="text-ink-soft mt-1 mb-8 text-base sm:text-lg">Your score: {score}</p>
+import { SiteHeader } from "@/components/marketing/site-header";
+import { TrialReport } from "@/components/trial/trial-report";
+
+export default async function TrialResultPage({ params }: { params: Promise<{ score: string }> }) {
+  const { score } = await params;
+  const total = Number(score);
+  const safeTotal = Number.isFinite(total) ? total : 0;
+
+  return (
+    <>
+      <SiteHeader solid />
+      <main className="min-h-screen pt-20 sm:pt-24 pb-16">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6">
+          <TrialReport total={safeTotal} />
         </div>
-    )
+      </main>
+    </>
+  );
 }

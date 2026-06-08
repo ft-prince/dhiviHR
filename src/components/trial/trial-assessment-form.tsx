@@ -1,58 +1,78 @@
 "use client";
 
-import { ArrowRight, ChevronLeft } from 'lucide-react';
-import { useState } from 'react';
-import { getTrialQuestionsAction} from "@/lib/trial/actions";
+import { useEffect, useState } from "react";
+import { getTrialQuestionsAction } from "@/lib/trial/actions";
 import { TrialQuestion } from "@/lib/types/rules";
-import { SiteHeader } from '../marketing/site-header';
-import { TrialAssessmentRunner } from './trial-assessment-runner';
+import { SiteHeader } from "../marketing/site-header";
+import { TrialAssessmentRunner } from "./trial-assessment-runner";
+import { InstructionsPopup } from "./instructions-popup";
 
-const INSTRUCTIONS = [
-    "This assessment trial is designed to evaluate your skills and suitability for the role you have applied for.",
-    "The trial consists of a series of questions that will test your knowledge, problem-solving abilities, and relevant skills.",
-    "Please read each question carefully and provide your best answer. You may use any resources you deem necessary, but plagiarism will not be tolerated.",
-    "The trial is timed, so please manage your time effectively to ensure you can complete all questions within the allotted time.",
-    "Once you have completed the trial, your responses will be reviewed by our hiring team, and we will contact you with the next steps in the hiring process."
-]
+export default function TrialAssessmentForm() {
+  const [questions, setQuestions] = useState<TrialQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(true);
 
-export default function TrialAssessmentForm(){
-    const [instructionsRead, setInstructionsRead] = useState(false);
-    const [questions, setQuestions] = useState<TrialQuestion[]>([]);
-
-    async function handleStartTrial(){
-      const questions = await getTrialQuestionsAction();
-      setQuestions(questions);
-    }
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const q = await getTrialQuestionsAction();
+        if (active) setQuestions(q);
+      } catch {
+        if (active) setQuestions([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   return (
     <>
-    <SiteHeader solid />
-    <main className="px-4 sm:px-8 md:px-16 lg:px-24 pt-20 sm:pt-24 pb-16 font-display">
-    {!instructionsRead ? (
-    <div className="max-w-3xl">
-      <h1 className="display-headline text-2xl sm:text-3xl md:text-4xl normal-case">Welcome to the dhiviHR Assessment Trial</h1>
-      <p className="font-display text-ink-soft mt-1 mb-8 text-base sm:text-lg">Read the instructions carefully:</p>
-      {/* <p className="font-bold mt-4">Instructions:</p> */}
-      {INSTRUCTIONS.map((instruction, index) => (
-        <p key={index} className="mt-2 text-ink font-display text-base sm:text-lg">
-          {index + 1}. {instruction}
-        </p>
-      ))}
-      <button onClick={() => setInstructionsRead(true)}
-        className="mt-8 px-5 py-2 font-display rounded-full text-white text-xl bg-brand-500 flex flex-row gap-2 hover:bg-brand-600 items-center border border-brand-500"
-        >Start trial <ArrowRight className="w-6 h-6"/></button>
-    </div>
-  ):(
-    <div>
-    <button onClick={() => {setInstructionsRead(false); handleStartTrial();}}
-      className="mb-4 ml-4 sm:ml-0 px-3 py-2 font-display rounded-2xl border border-black flex flex-row gap-0 items-center hover:border-brand-600 hover:text-brand-600"
-      ><ChevronLeft/>Back</button>
-      <h2 className="text-xl sm:text-2xl font-bold ml-4">Your CRAFTe Driving Test</h2>
-      <div className="ml-4">Answer the following questions appropriately:</div>  
-    <div><TrialAssessmentRunner questions={questions}/></div>
-    </div>
-  )}
-  </main>
-</>
-  )
+      <SiteHeader solid />
+      {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
+
+      <main className="min-h-screen pt-20 sm:pt-24 pb-16">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6">
+
+          {/* Page hero */}
+          <div className="pt-6 sm:pt-10 pb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-600 mb-3">
+              CRAFTe Trial
+            </p>
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl tracking-tight text-ink">
+              Your CRAFTe Driving Test
+            </h1>
+            <p className="mt-2 text-[14px] sm:text-[15px] text-ink-soft leading-relaxed">
+              Six quick questions. Rate each one honestly from Never to Always.
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="mt-8 space-y-4" aria-hidden>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="rounded-2xl border border-gray-100 bg-white p-5 sm:p-6 shadow-soft animate-pulse">
+                  <div className="flex gap-3 mb-5">
+                    <div className="w-7 h-7 rounded-full bg-gray-100 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-100 rounded-full w-3/4" />
+                      <div className="h-4 bg-gray-100 rounded-full w-1/2" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[0,1,2,3,4].map((j) => (
+                      <div key={j} className="h-12 bg-gray-100 rounded-xl" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <TrialAssessmentRunner questions={questions} />
+          )}
+
+        </div>
+      </main>
+    </>
+  );
 }

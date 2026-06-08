@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Paywall } from "@/components/payment/paywall";
 import { isAssessmentPaid } from "@/lib/payment/actions";
 import { READINESS_LEVEL } from "@/lib/utils";
+import { tierSubHeadingForLevel } from "@/lib/scoring";
 import DownloadButton from "@/components/assessment/downloadButton";
 
 export const dynamic = "force-dynamic";
@@ -135,6 +136,11 @@ function FullReport({
             {total} <span className="text-ink-soft text-2xl sm:text-3xl">/ 4.0</span>
           </div>
           <div className="mt-4 display-headline text-2xl">{band?.label || "Assessment Completed"}</div>
+          {band?.level && tierSubHeadingForLevel(band.level) && (
+            <p className="mt-2 text-sm sm:text-base text-ink-muted leading-relaxed max-w-prose">
+              {tierSubHeadingForLevel(band.level)}
+            </p>
+          )}
           <div className="mt-6">
             <DownloadButton assessmentId={assessmentId} />
           </div>
