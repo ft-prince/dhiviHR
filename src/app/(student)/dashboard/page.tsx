@@ -25,6 +25,7 @@ export default async function DashboardPage() {
   const userDetail = await db.select({
     streamName: streams.name,
     createdBy: users.createdBy,
+    registrationSource: users.registrationSource,
   }).from(users)
   .leftJoin(streams, eq(streams.id, users.streamId))
   .where(eq(users.id, session.user.id))
@@ -138,6 +139,7 @@ export default async function DashboardPage() {
                   {user.role?.replace("_", " ") ?? "—"}
                 </dd>
               </div>
+              {userDetail?.registrationSource !== "self" &&(
               <div className="pt-3 mt-3 border-t border-border">
               <dt className="text-ink-muted">Assessment Grants</dt>
               <dd className="mt-1 flex items-center gap-2">
@@ -152,6 +154,7 @@ export default async function DashboardPage() {
                 </p>
               )}
             </div>
+              )}
             </dl>
           </div>
         </div>

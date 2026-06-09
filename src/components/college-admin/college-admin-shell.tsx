@@ -47,10 +47,12 @@ function NavLink({ item, active, onClick }: { item: NavItem; active: boolean; on
 export function CollegeAdminShell({
   children,
   user,
+  adminDetail,
 //   scope,
 }: {
   children: React.ReactNode;
   user: { name?: string | null; email?: string | null; role: string };
+  adminDetail: { collegeName: string | null; state: string | null; city: string | null; pocDesignation: string | null };
 //   scope: "Admin" | "Super Admin";
 }) {
   const nav = ADMIN_NAV;
@@ -111,23 +113,46 @@ export function CollegeAdminShell({
           </div>
 
           {/* User info */}
-          <div className="px-5 py-4 border-b border-border shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
-                <span className="text-white text-[11px] font-bold uppercase">
-                  {(user.name ?? "A").charAt(0)}
-                </span>
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-ink truncate">{user.name ?? "College Admin"}</div>
-                <div className="text-[11px] text-ink-soft truncate">{user.email}</div>
-              </div>
+          <div className="px-5 pt-4 pb-3 border-b border-border shrink-0">
+          <div className="flex flex-col gap-2">
+            {/* Scope badge */}
+            <div className="flex flex-row gap-4">
+                {/*Badge*/}
+                <div>
+                    <div className="h-8 w-8 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
+                      <span className="text-white text-[11px] font-bold uppercase">
+                        {(user.name ?? "A").charAt(0)}
+                      </span>
+                    </div>
+                </div>
+                {/*Name and designation*/}
+                <div>
+                  <div className="text-sm font-semibold text-ink truncate">
+                  {user.name ?? "College Admin"}
+                  {adminDetail?.pocDesignation && (
+                    <span className="text-ink-soft font-normal ml-1">
+                      ({adminDetail.pocDesignation})
+                    </span>
+                  )}
+                  </div>
+                  <div className="text-[11px] text-ink-soft truncate">{user.email}</div>
+                </div>
             </div>
-            <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">College Admin</span>
+            {/* College data */}
+            <div className="px-2 items-center justify-center">
+                {adminDetail?.collegeName && (
+              <div className="text-[15px] text-ink truncate flex flex-row items-center gap-1">
+                <span className="font-semibold">  {adminDetail.collegeName}</span>
+                {(adminDetail.city || adminDetail.state) && (
+                  <span className="text-[12px] text-ink items-center justify-center">
+                    · {[adminDetail.city, adminDetail.state].filter(Boolean).join(", ")}
+                  </span>
+                )}
+              </div>
+            )}
             </div>
           </div>
+        </div>
 
           {/* Nav */}
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
