@@ -6,6 +6,7 @@ import { assessments } from "@/lib/db/schema";
 import { getActiveQuestionsAction } from "@/lib/assessment/actions";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { AssessmentRunner } from "@/components/assessment/assessment-runner";
+import { Instructions } from "@/components/assessment/instructions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,6 +37,7 @@ export default async function AssessmentRunPage({ params }: { params: Promise<{ 
   return (
     <>
       <SiteHeader user={{ name: session.user.name, role: (session.user as { role?: string }).role }} solid />
+      <Instructions/>
       <main className="container-narrow pt-24 sm:pt-28 pb-10">
         <AssessmentRunner
           assessmentId={id}

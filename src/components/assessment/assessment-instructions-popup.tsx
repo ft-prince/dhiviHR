@@ -3,21 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Volume2, VolumeX, Info } from "lucide-react";
 
-const AUTO_CLOSE_MS = 18000;
+const AUTO_CLOSE_MS = 15000;
 
 const SPOKEN_INSTRUCTIONS =
-  "Welcome to your CRAFTe driving test. Six quick questions, each rated from never to always. " +
-  "Answer honestly — there are no wrong answers. It takes about a minute, and your readiness result appears right after.";
+  "33 situational questions across 7 competencies. Takes about 12 minutes." +
+  "Your answers are saved on every submit and you can resume any time.";
 
 interface InstructionsPopupProps {
   onClose: () => void;
 }
 
 /**
- * Tasteful glowing-yellow instructions popup. Auto-closes after ~18s
+ * Tasteful glowing-yellow instructions popup. Auto-closes after ~9s
  * (with a visible countdown bar) and offers optional voice narration.
  */
-export function InstructionsPopup({ onClose }: InstructionsPopupProps) {
+export function AssessmentInstructionsPopup({ onClose }: InstructionsPopupProps) {
   const [closing, setClosing] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
@@ -101,13 +101,14 @@ export function InstructionsPopup({ onClose }: InstructionsPopupProps) {
           </div>
 
           <ul className="space-y-2 text-[13.5px] text-yellow-900/90 leading-relaxed mb-5">
-            <li>• <strong>6 quick questions</strong> — about a minute total.</li>
-            <li>• Rate each from <strong>Never (1)</strong> to <strong>Always (5)</strong>.</li>
-            <li>• Be honest — there are no right or wrong answers.</li>
-            <li>• Your readiness result appears the moment you submit.</li>
-          </ul>
+            <li>• <strong>33 questions</strong> — takes about 12 minutes.</li>
+            <li>• Answer as you <em>are</em>, not as you wish you were.</li>
+            <li>• No right or wrong answers — just be real.</li>
+            <li>• Your results show up the moment you hit submit.</li>
+            </ul>
+            <p className="text-[13px] text-yellow-800/70 font-medium">You've got this. All the best! </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-3">
             <button
               onClick={handleClose}
               className="text-[13px] font-semibold text-yellow-950 rounded-full px-5 py-2 transition-colors"

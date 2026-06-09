@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
 import { READINESS_LEVEL, fmtDate } from "@/lib/utils";
 import { logoutAction } from "@/lib/auth/actions";
+import { startAssessmentAction } from "@/lib/assessment/actions";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -95,9 +96,7 @@ export default async function DashboardPage() {
                   <Link href={`/report/${latest.id}`}>
                     <Button size="sm">View Report</Button>
                   </Link>
-                  <Link href="/assessment">
-                    <Button variant="outline" size="sm">Retake Assessment</Button>
-                  </Link>
+                    <Button variant="outline" size="sm" onClick={startAssessmentAction}>Retake Assessment</Button>
                 </div>
               </>
             ) : (
@@ -107,9 +106,9 @@ export default async function DashboardPage() {
                   Take the 20-minute assessment to map your employability level across five competency dimensions.
                 </p>
                 <div className="mt-6">
-                  <Link href="/assessment">
-                    <Button size="sm">Start Assessment</Button>
-                  </Link>
+                    <Button size="sm" onClick={startAssessmentAction}>
+                      Start Assessment
+                    </Button>
                 </div>
               </>
             )}
