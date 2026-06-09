@@ -20,6 +20,7 @@ export default async function SignupPage() {
         <div className="mt-6 text-sm text-ink-muted text-center space-y-1">
           <div>Already have an account? <Link href="/login" className="text-brand-600 font-medium hover:underline">Log in</Link></div>
           <div>Have a college code? <Link href="/signup/student" className="text-brand-600 font-medium hover:underline">Student signup</Link></div>
+          <div>Are you a college? <Link href="/signup/college" className="text-brand-600 font-medium hover:underline">Register here</Link></div>
         </div>
       </div>
     </main>

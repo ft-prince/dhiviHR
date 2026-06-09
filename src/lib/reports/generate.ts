@@ -5,8 +5,6 @@ import { READINESS_LEVEL } from "@/lib/utils";
 import { tierSubHeadingForLevel } from "@/lib/scoring";
 import { generateFullReport, type ReportData, type CompetencyScore } from "@/lib/pdf/layout";
 
-export const dynamic = "force-dynamic";
-
 interface GenerateReportOptions {
   assessmentId: string;
   user: {

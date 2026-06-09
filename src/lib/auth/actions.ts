@@ -8,11 +8,11 @@ import { db } from "@/lib/db";
 import { users, accessCodes, streams } from "@/lib/db/schema";
 import { signIn, signOut } from "@/lib/auth";
 import { AuthError } from "next-auth";
-import { signupSchema, studentSignupSchema, loginSchema } from "./validators";
+import { signupSchema, studentSignupSchema, collegeAdminSignupSchema,loginSchema } from "./validators";
 import { rateLimit, rlKey } from "@/lib/rate-limit";
 import { audit } from "@/lib/audit";
 
-export type ActionResult = { ok: true; redirectTo: string } | { ok: false; error: string };
+export type ActionResult = { ok: true; redirectTo: string } | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 async function clientIp() {
   const h = await headers();
@@ -135,6 +135,65 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
   return { ok: true, redirectTo: "/dashboard" };
 }
 
+export async function collegeAdminSignupAction(formData: FormData): Promise<ActionResult>{
+    const ip = await clientIp();
+    const rl = rateLimit(rlKey("signup-college-admin", ip), 5, 60_000);
+    if (!rl.ok) return { ok: false, error: "Too many attempts. Please wait a minute." };
+
+    console.log({
+    collegeName: formData.get("collegeName"),
+    email: formData.get("email"),
+    state: formData.get("state"),
+    city: formData.get("city"),
+    name: formData.get("name"),
+    pocDesignation: formData.get("pocDesignation"),
+    phone: formData.get("phone"),
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+    const parsed = collegeAdminSignupSchema.safeParse({
+      collegeName: formData.get("collegeName"),
+      email: formData.get("email"),
+      state: formData.get("state"),
+      city: formData.get("city"),
+      name: formData.get("name"),
+      pocDesignation: formData.get("pocDesignation"),
+      phone: formData.get("phone"),
+      password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
+    })
+    if (!parsed.success){
+      const fieldErrors = parsed.error.issues.reduce((acc, issue) => {
+        const field = issue.path[0] as string;
+        if(!acc[field]) acc[field] = issue.message;
+        return acc;
+      }, {} as Record<string, string>);
+      return { ok: false, error: "Invalid input", fieldErrors };
+    }
+
+    const { collegeName, email, state, city, name, pocDesignation, phone, password } = parsed.data;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const [created] = await db
+    .insert(users)
+    .values({ collegeName, email, state, city, name, pocDesignation, phone, passwordHash, role: "college_admin", registrationSource: "self" })
+    .returning({ id: users.id });
+
+    await audit({ actorId: created.id, action: "user.signup", target: created.id, meta: { role: "college_admin" } });
+    
+    try {
+      await signIn("credentials", {email, password, redirect: false });
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return { ok: false, error: "Auto-login failed. Please log in manually." };
+      }
+      throw error;
+    }
+
+    return {ok: true, redirectTo: "/college-admin" };
+}
+
 export async function loginAction(formData: FormData): Promise<ActionResult> {
   const ip = await clientIp();
   const rl = rateLimit(rlKey("login", ip), 10, 60_000);
@@ -165,8 +224,41 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   const redirectTo =
     role === "super_admin" ? "/super" :
     role === "client_admin" ? "/admin" :
+    role === "college_admin" ? "/college-admin" :
     "/dashboard";
 
+  return { ok: true, redirectTo };
+}
+
+export async function CollegeLoginAction(formData: FormData): Promise<ActionResult> {
+  const ip = await clientIp();
+  const rl = rateLimit(rlKey("college-login", ip), 10, 60_000);
+  if (!rl.ok) return { ok: false, error: "Too many attempts. Please wait a minute." };
+
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return { ok: false, error: "Invalid email or password" };
+
+  try {
+    await signIn("credentials", { ...parsed.data, redirect: false });
+  } catch(error){
+    if(error instanceof AuthError){
+      return { ok: false, error: "Invalid email or password" };
+    }
+    throw error;
+  }
+
+  const found = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.email, parsed.data.email))
+    .limit(1);
+
+  const role = found[0]?.role;
+  const redirectTo = role === "college_admin" ? "/college-admin" : "/dashboard";
+  // actually this can be done with the orginal loginAction by just adding the college admin and conifguring the redirect to /college-admin
   return { ok: true, redirectTo };
 }
 

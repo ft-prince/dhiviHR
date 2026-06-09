@@ -33,17 +33,18 @@ import { Option } from "@/lib/types/rules";
 
 
 export const userRole = pgEnum("user_role", [
-
-  "student",
-
-  "college_student",
-
-  "client_admin",
-
-  "super_admin",
-
+  "student",
+  "college_student",
+  "client_admin",
+  "college_admin",
+  "super_admin",
 ]);
 
+export const registrationSource = pgEnum("registration_source",[
+  "self",
+  "college_admin",
+  "access_code",
+])
 
 export const assessmentStatus = pgEnum("assessment_status", [
 
@@ -68,6 +69,10 @@ export const paymentStatus = pgEnum("payment_status", [
 
 ]);
 
+export const paymentMode = pgEnum("payment_mode", [
+  "self",
+  "college_admin",
+]);
 
 export const readinessLevel = pgEnum("readiness_level", [
 
@@ -119,31 +124,25 @@ export const trial_questions = pgTable("trial_questions", {
   hint: text("hint"),
 });
 export const users = pgTable("users", {
-
-  id: uuid("id").primaryKey().defaultRandom(),
-
-  name: text("name"),
-
-  email: text("email").notNull().unique(),
-
-  emailVerified: timestamp("email_verified", { withTimezone: true }),
-
-  streamId: uuid("stream_id").references((): AnyPgColumn => streams.id, {onDelete: "set null"}),
-
-  passwordHash: text("password_hash"),
-
-  image: text("image"),
-
-  role: userRole("role").notNull().default("student"),
-
-  collegeId: uuid("college_id"),
-
-  phone: text("phone"),
-
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name"),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("email_verified", { withTimezone: true }),
+  streamId: uuid("stream_id").references((): AnyPgColumn => streams.id, {onDelete: "set null"}),
+  passwordHash: text("password_hash"),
+  image: text("image"),
+  role: userRole("role").notNull().default("student"),
+  collegeId: uuid("college_id"),
+  collegeName: text("college_name"),
+  country: text("country"),
+  state: text("state"),
+  city: text("city"),
+  pocDesignation: text("poc_designation"), 
+  registrationSource: registrationSource("registration_source").default("self"),
+  phone: text("phone"),
+  createdBy: uuid("created_by").references((): AnyPgColumn => users.id, {onDelete: "set null"}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 
@@ -492,27 +491,37 @@ export const score_competencies = pgTable("score_competencies", {
 
 
 export const payments = pgTable("payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  assessmentId: uuid("assessment_id").references(() => assessments.id),
+  amount: integer("amount").notNull(), // paise
+  currency: text("currency").notNull().default("INR"),
+  razorpayOrderId: text("razorpay_order_id").unique(),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpaySignature: text("razorpay_signature"),
+  status: paymentStatus("status").notNull().default("created"),
+  paymentMode: paymentMode("payment_mode").default("self"),
+  isBulk: boolean("is_bulk").notNull().default(false),
+  studentCount: integer("student_count"),
+  paidBy: uuid("paid_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
-  id: uuid("id").primaryKey().defaultRandom(),
+export const bulkOrderStudents = pgTable("bulk_order_students", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id").notNull().references(() => payments.id, { onDelete: "cascade" }),
+  studentId: uuid("student_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-
-  assessmentId: uuid("assessment_id").references(() => assessments.id),
-
-  amount: integer("amount").notNull(), // paise
-
-  currency: text("currency").notNull().default("INR"),
-
-  razorpayOrderId: text("razorpay_order_id").unique(),
-
-  razorpayPaymentId: text("razorpay_payment_id"),
-
-  razorpaySignature: text("razorpay_signature"),
-
-  status: paymentStatus("status").notNull().default("created"),
-
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-
+export const accessGrants = pgTable("access_grants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, {onDelete: "cascade" }),
+  grantedBy: uuid("granted_by").references(() => users.id, { onDelete: "set null" }),
+  paymentId: uuid("payment_id").references(() => payments.id, { onDelete: "set null" }),
+  usedForAssessmentId: uuid("used_for_assessment_id").references(() => assessments.id, { onDelete: "set null" }),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 

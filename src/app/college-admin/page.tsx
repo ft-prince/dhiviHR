@@ -1,0 +1,83 @@
+import Link from "next/link";
+import { PageHeader } from "@/components/admin/page-header";
+import { KpiCard } from "@/components/admin/kpi-card";
+import { DataTable } from "@/components/admin/data-table";
+import  PaymentStatusBadge from "@/components/ui/badge";
+import {Users} from "lucide-react"
+import {db} from "@/lib/db";
+import {eq, sql} from "drizzle-orm";
+import {streams, users, payments, accessGrants} from "@/lib/db/schema";
+import { StudentsCreatePanel } from "@/components/college-admin/students-create-panel";
+import { requireCollegeAdmin } from "@/lib/college-admin/actions";
+import  StudentsAddForm  from "@/components/college-admin/student-add-form";
+export const dynamic = "force-dynamic";
+
+export default async function CollegeAdminOverviewPage() {
+  const me = await requireCollegeAdmin();
+
+  const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams);
+  const allStudents = await db
+  .selectDistinctOn([users.id],{name: users.name, email: users.email, streamName: streams.name, phone: users.phone, paymentStatus: sql<string>`CASE WHEN ${accessGrants.id} IS NOT NULL THEN 'paid' ELSE 'unpaid' END`}).from(users)
+  .leftJoin(accessGrants, eq(users.id, accessGrants.userId))
+  .leftJoin(streams, eq(users.streamId, streams.id))
+  .where(eq(users.createdBy, me));
+  
+  return (
+    <>
+      <PageHeader
+        title="College Admin Dashboard"
+        description="Welcome to your dashboard! Here you can manage your college's profile."
+        actions={<StudentsCreatePanel streams={allStreams} />}
+      />
+
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <KpiCard
+          label="Total Students"
+          value={allStudents.length}
+          icon={Users}
+          hint="Number of students"
+        />
+        <KpiCard
+          label="Active Students"
+          value={45}
+          icon={Users}
+          hint="Students who have attempted"
+        />
+        <KpiCard
+          label="Average Readiness Level"
+          value="Practitioner"
+          icon={Users}
+          hint="Average readiness level"
+        />
+        <KpiCard
+          label="Top Performing Stream"
+          value="Computer Science"
+          icon={Users}
+          hint="Highest average level"
+        />
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 mt-5 sm:mt-6 md:mt-8">
+        <div className="md:col-span-3">
+        <h2 className="font-display font-bold text-base sm:text-lg text-ink mb-3">Recently Added Students</h2>
+        <DataTable
+          rows={allStudents.map((s, i) => ({ id: String(i), email: s.email, name: s.name, streamName: s.streamName, phone: s.phone, paymentStatus: s.paymentStatus }))}
+          emptyText = "No students added yet"
+          columns={[
+            {key: "name", header: "Name", 
+            render: r => <div className="font-medium text-ink">{r.name}</div>},
+            {key: "email", header: "Email", render: r => <div className="font-medium text-ink">{r.email}</div>},
+            {key: "streamName", header: "Stream", render: r => <div className="font-medium text-ink">{r.streamName}</div>},
+            {key: "phone", header: "Phone", render: r => <div className="font-medium text-ink">{r.phone}</div>},
+            {key: "paymentStatus", header: "Payment Status", render: r => <PaymentStatusBadge status={r.paymentStatus === "paid" ? "Paid" : "Unpaid"} />}
+          ]}
+          />
+        </div>
+        <div className="md:col-span-1">
+        <h2 className="font-display font-bold text-base sm:text-lg text-ink mb-3">Add student</h2>
+        <StudentsAddForm streams={allStreams} />
+        </div>
+        </section>
+    </>
+    )
+}

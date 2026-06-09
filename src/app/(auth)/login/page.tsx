@@ -20,6 +20,9 @@ export default function LoginPage() {
           <div>
             Have a college code? <Link href="/signup/student" className="text-brand-600 font-medium hover:underline">Student signup</Link>
           </div>
+          <div>
+            Are you a college? <Link href="/signup/college" className="text-brand-600 font-medium hover:underline">Register here</Link>
+          </div>
         </div>
       </div>
     </main>

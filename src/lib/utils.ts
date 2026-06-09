@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -27,5 +28,5 @@ export const READINESS_LEVEL=[
   { min: 0, max: 1.99, level: "learner", label: "Learner"},
   { min: 2, max: 2.74, level: "practitioner", label: "Practitioner"},
   { min: 2.75, max: 3.49, level: "accelerator", label: "Accelerator"},
-  { min: 3.5, max: 4, level: "future_ready", label: "Future Ready"},
+  { min: 3.5, max: 4, level: "future_ready", label: "Corporate license Ready"},
 ] as const;
