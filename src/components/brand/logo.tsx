@@ -1,26 +1,23 @@
 import { cn } from "@/lib/utils";
 
 /**
- * DHIVI HR brand mark — green circle with abstract figure (person reaching up over curve).
+ * CRAFTe brand mark — green circle with abstract figure (person reaching up over curve).
  */
-export function LogoMark({ className }: { className?: string }) {
+
+  export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={cn("h-9 w-9", className)} aria-hidden>
-      <circle cx="50" cy="50" r="50" fill="currentColor" />
-      <g fill="#fff">
-        <circle cx="36" cy="36" r="6" />
-        <path
-          d="M22 60 Q 50 30, 78 60"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="5"
-          strokeLinecap="round"
-        />
-        <circle cx="70" cy="58" r="6" />
-      </g>
-    </svg>
+    <div
+      className={cn("h-9 w-9 rounded-full overflow-hidden flex-shrink-0", className)}
+    >
+      <img
+        src="/logo.jpg"
+        alt="CRAFTe logo mark"
+        className="w-full h-full object-cover scale-150"
+      />
+    </div>
   );
 }
+
 
 export function LogoBadge({ size = 96, withWordmark = true }: { size?: number; withWordmark?: boolean }) {
   return (
@@ -49,7 +46,7 @@ export function Wordmark({ className }: { className?: string }) {
     <div className={cn("flex items-center gap-2", className)}>
       <LogoMark className="h-9 w-9 text-brand-500" />
       <span className="font-display font-extrabold text-xl tracking-wide text-ink">
-        DHIVI <span className="text-brand-600">HR</span>
+        CRAFTe
       </span>
     </div>
   );

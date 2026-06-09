@@ -15,12 +15,12 @@ const SCALE_OPTIONS_BASE = [
 ];
 
 const PLACEHOLDER_QUESTIONS: TrialQuestion[] = [
-  { id: "p-1", sectionId: "", active: true, prompt: "This is a placeholder question for demonstration purposes.", options: SCALE_OPTIONS_BASE, orderIndex: 0, hint: null },
-  { id: "p-2", sectionId: "", active: true, prompt: "Please replace this with actual questions from the database.", options: SCALE_OPTIONS_BASE, orderIndex: 1, hint: null },
-  { id: "p-3", sectionId: "", active: true, prompt: "Please replace this with actual questions from the database.", options: SCALE_OPTIONS_BASE, orderIndex: 2, hint: null },
-  { id: "p-4", sectionId: "", active: true, prompt: "Please replace this with actual questions from the database.", options: SCALE_OPTIONS_BASE, orderIndex: 3, hint: null },
-  { id: "p-5", sectionId: "", active: true, prompt: "Please replace this with actual questions from the database.", options: SCALE_OPTIONS_BASE, orderIndex: 4, hint: null },
-  { id: "p-6", sectionId: "", active: true, prompt: "Please replace this with actual questions from the database.", options: SCALE_OPTIONS_BASE, orderIndex: 5, hint: null },
+  { id: "p-1", sectionId: "", active: true, prompt: "When I look at something a product, a service, an app I naturally think about how it makes money and whether it could succeed commercially.", options: SCALE_OPTIONS_BASE, orderIndex: 0, hint: null },
+  { id: "p-2", sectionId: "", active: true, prompt: "After a setback, a failure, a bad grade, a rejection I am back to full effort within 48 hours.", options: SCALE_OPTIONS_BASE, orderIndex: 1, hint: null },
+  { id: "p-3", sectionId: "", active: true, prompt: "When I explain a project or idea I am working on, people actually understand it and sometimes get excited about it as I am.", options: SCALE_OPTIONS_BASE, orderIndex: 2, hint: null },
+  { id: "p-4", sectionId: "", active: true, prompt: "When someone criticizes my work, my first instinct is curiosity not defence.", options: SCALE_OPTIONS_BASE, orderIndex: 3, hint: null },
+  { id: "p-5", sectionId: "", active: true, prompt: "I finish what I start even when the motivation is gone and no one is checking on me.", options: SCALE_OPTIONS_BASE, orderIndex: 4, hint: null },
+  { id: "p-6", sectionId: "", active: true, prompt: "I use AI tools in a way that makes my work meaningfully better not just faster.", options: SCALE_OPTIONS_BASE, orderIndex: 5, hint: null },
 ];
 
 /* Semantic Likert scale — idle is neutral, selected shows meaning */

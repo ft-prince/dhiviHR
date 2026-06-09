@@ -133,11 +133,11 @@ function SectionBadge({ number, label, light }: { number: string; label: string;
 }
 
 /* ─── Silhouette placeholder (user fills photo + fields later) ─────── */
-function SilhouettePanel({ badge, badgeColor, caption }: { badge: string; badgeColor: string; caption: string }) {
+function SilhouettePanel({ badge, badgeColor, caption , img }: { badge: string; badgeColor: string; caption: string; img: string }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6 flex flex-col">
       <div className="relative rounded-xl bg-gray-50 flex items-center justify-center" style={{ aspectRatio: "4/3" }}>
-        <User size={72} className="text-gray-300" strokeWidth={1.25} />
+        <img src={img} alt={badge} className="w-full h-full object-cover rounded-xl" />
         <span className="absolute top-3 left-3 text-[11px] font-semibold uppercase tracking-[0.12em] rounded-full px-3 py-1 text-white" style={{ background: badgeColor }}>{badge}</span>
       </div>
       <p className="text-[13px] text-gray-600 leading-relaxed mt-4">{caption}</p>
@@ -335,10 +335,10 @@ export function LandingPage({ user }: LandingPageProps) {
               {/* LEFT: wordmark + links */}
               <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-2 shrink-0">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: GREEN }}>
+                  {/* <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: GREEN }}>
                     <span className="text-white font-bold" style={{ fontSize: "9px", letterSpacing: "0.05em" }}>DH</span>
-                  </div>
-                  <span className="font-bold text-gray-900 text-[15px] tracking-tight">DhiviHR</span>
+                  </div> */}
+                  <span className="font-bold text-gray-900 text-[15px] tracking-tight">CRAFTe</span>
                 </Link>
                 <div className="hidden md:flex items-center gap-6">
                   {NAV_LINKS.map(({ label, href }) =>
@@ -424,10 +424,10 @@ export function LandingPage({ user }: LandingPageProps) {
         {/* Hero content — centered */}
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center text-center">
           <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8 lg:px-12 py-16">
-            <p className="text-gray-600 tracking-wide mb-5 sm:mb-7" style={{ fontSize: "13px" }}>
+            {/* <p className="text-gray-600 tracking-wide mb-5 sm:mb-7" style={{ fontSize: "13px" }}>
               Corporate Readiness Platform
-            </p>
-            <h1 className="font-medium text-gray-900 leading-[1.1] tracking-[-0.03em] mx-auto max-w-[16ch]" style={{ fontSize: "clamp(1.9rem,6vw,4.2rem)" }}>
+            </p> */}
+            <h1 className="font-medium text-gray-900 leading-[1.1] tracking-[-0.03em] mx-auto max-w-[20ch]" style={{ fontSize: "clamp(1.9rem,6vw,4.2rem)" }}>
               Know where you stand today and what it takes to become Corporate ready tomorrow.
             </h1>
             <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5">
@@ -447,12 +447,12 @@ export function LandingPage({ user }: LandingPageProps) {
       {/* ══════════════════════════════════════════════════════════
           CAR RACE  (its own attractive section)
          ══════════════════════════════════════════════════════════ */}
-      <CarRaceSection />
+      {/* <CarRaceSection /> */}
 
       {/* ══════════════════════════════════════════════════════════
           STATS BAR
          ══════════════════════════════════════════════════════════ */}
-      <section style={{ background: GREEN }}>
+      {/* <section style={{ background: GREEN }}>
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
           <div className="grid grid-cols-2 md:grid-cols-4">
             {STATS.map((s, i) => (
@@ -465,7 +465,7 @@ export function LandingPage({ user }: LandingPageProps) {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ══════════════════════════════════════════════════════════
           STEP 1 — INTRODUCING CRAFTe  (before / after)
@@ -478,16 +478,28 @@ export function LandingPage({ user }: LandingPageProps) {
           </h2>
 
           <div className="grid md:grid-cols-2 gap-5 sm:gap-6 items-stretch">
+            {[
+            {
+              badge: "Before",
+              badgeColor: "#EF4444",
+              caption: "Unaware of the skills employers truly value — working hard, but struggling to stand out in placements and the workplace.",
+              img: "/before.jpg",
+            },
+            {
+              badge: "After",
+              badgeColor: GREEN,
+              caption: "Took the assessment, identified the gaps, worked on the competencies — and walked in corporate-ready, confident, and ahead.",
+              img: "/after.jpg",
+            },
+          ].map((item, k) => (
             <SilhouettePanel
-              badge="Before"
-              badgeColor="#EF4444"
-              caption="Unaware of the skills employers truly value — working hard, but struggling to stand out in placements and the workplace."
+              key={k}
+              badge={item.badge}
+              badgeColor={item.badgeColor}
+              caption={item.caption}
+              img={item.img}
             />
-            <SilhouettePanel
-              badge="After"
-              badgeColor={GREEN}
-              caption="Took the assessment, identified the gaps, worked on the competencies — and walked in corporate-ready, confident, and ahead."
-            />
+          ))}
           </div>
         </div>
       </section>
@@ -554,7 +566,7 @@ export function LandingPage({ user }: LandingPageProps) {
           <div className="mt-6 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5" style={{ background: GREEN }}>
             <div>
               <p className="text-white/80 text-[13px] mb-1">Ready to find your level?</p>
-              <h3 className="text-white font-semibold leading-tight" style={{ fontSize: "clamp(1.1rem,2.5vw,1.5rem)" }}>Get your dimension-level breakdown in 20 minutes.</h3>
+              <h3 className="text-white font-semibold leading-tight" style={{ fontSize: "clamp(1.1rem,2.5vw,1.5rem)" }}>Get your dimension-level breakdown.</h3>
             </div>
             <Link href="/signup" className="inline-flex items-center gap-2 bg-white text-[14px] font-medium rounded-full px-6 py-3 shrink-0 transition-opacity hover:opacity-90" style={{ color: GREEN }}>
               Try Now <ArrowRight size={15} />
@@ -578,8 +590,8 @@ export function LandingPage({ user }: LandingPageProps) {
             {/* FOR STUDENTS */}
             <div className="rounded-2xl border border-gray-100 bg-white p-8 sm:p-10 flex flex-col hover:border-green-200 hover:shadow-lg transition-all duration-200">
               {/* small image placeholder */}
-              <div className="rounded-xl bg-gray-50 flex items-center justify-center mb-7" style={{ aspectRatio: "16/7" }}>
-                <User size={48} className="text-gray-300" strokeWidth={1.25} />
+              <div className="rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center mb-7">
+                <img src="/corporate-ready.jpg" alt="For Students" className="w-full h-full object-cover rounded-xl" />
               </div>
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN }}>
@@ -604,8 +616,8 @@ export function LandingPage({ user }: LandingPageProps) {
             {/* FOR COLLEGES */}
             <div id="colleges" className="rounded-2xl p-8 sm:p-10 flex flex-col" style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.06)" }}>
               {/* small image placeholder */}
-              <div className="rounded-xl flex items-center justify-center mb-7" style={{ aspectRatio: "16/7", background: "rgba(255,255,255,0.05)" }}>
-                <Building2 size={48} className="text-white/25" strokeWidth={1.25} />
+              <div className="rounded-xl flex items-center overflow-hidden justify-center mb-7 w-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <img src="/enterprise.jpg" alt="For Colleges" className="w-full h-full object-cover rounded-xl" />
               </div>
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN }}>
@@ -661,24 +673,38 @@ export function LandingPage({ user }: LandingPageProps) {
               <TextRollButton label="Talk to the team" green onClick={openConnect} />
             </div>
 
-            {/* Right: speaker image placeholders (photos + names added later) */}
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 mb-4 flex items-center gap-2">
+              <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-gray-400 mb-4 flex items-center gap-2">
                 <Mic size={13} style={{ color: GREEN }} /> Our experts
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                {[0, 1, 2, 3].map((k) => (
-                  <div key={k} className="rounded-2xl border border-gray-100 bg-white p-5 flex flex-col items-center text-center">
-                    <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <User size={40} className="text-gray-300" strokeWidth={1.25} />
+              <div className="flex flex-row gap-4 items-start">
+                {[
+                  { img: "/expert_talk1.JPG", name: "Sonam Aggarwal & Charu" },
+                  { img: "/expert_talk2.jpg", name: "Siddharth Puri" },
+                ].map((expert, k) => (
+                  <div
+                    key={k}
+                    className="rounded-2xl border border-gray-100 bg-white overflow-hidden flex-1"
+                    style={{ marginTop: k === 1 ? "72px" : "0" }}
+                  >
+                    <img
+                      src={expert.img}
+                      alt={expert.name}
+                      className="w-full object-cover object-top"
+                    />
+                    <div className="px-4 py-3 flex flex-col gap-1">
+                      <span className="text-lg font-semibold text-gray-900">
+                        {expert.name}
+                      </span>
+                      {/* <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-gray-400">
+                        {expert.title}
+                      </span> */}
                     </div>
-                    {/* placeholders for name + designation — fill later */}
-                    <div className="h-3 w-24 rounded-full bg-gray-200 mb-2" />
-                    <div className="h-2.5 w-16 rounded-full bg-gray-100" />
                   </div>
                 ))}
               </div>
             </div>
+
           </div>
         </div>
       </section>

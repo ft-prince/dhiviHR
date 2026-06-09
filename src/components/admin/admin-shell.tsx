@@ -141,8 +141,7 @@ export function AdminShell({
               </div>
             </div>
             <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">{scope}</span>
+              <span className="text-[12px] font-bold uppercase tracking-wider text-brand-700">{scope}</span>
             </div>
           </div>
 
