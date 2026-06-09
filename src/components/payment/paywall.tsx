@@ -4,17 +4,26 @@ import Script from "next/script";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { createPaymentOrderAction, verifyPaymentAction, devMarkPaidAction } from "@/lib/payment/actions";
+import { createPaymentOrderAction, verifyPaymentAction, payUsingGrantAction, devMarkPaidAction } from "@/lib/payment/actions";
 import { Lock } from "lucide-react";
 
 declare global {
   interface Window { Razorpay?: new (opts: Record<string, unknown>) => { open(): void } }
 }
 
-export function Paywall({ assessmentId, userName, userEmail }: { assessmentId: string; userName?: string | null; userEmail?: string | null }) {
+export function Paywall({ assessmentId, userName, userEmail, grantCount }: { assessmentId: string; userName?: string | null; userEmail?: string | null; grantCount: number }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  function useGrant() {
+    setError(null);
+    start(async () => {
+      const r = await payUsingGrantAction(assessmentId);
+      if (!r.ok) return setError(r.error);
+      router.refresh();
+    });
+  }
 
   function pay() {
     setError(null);
@@ -68,10 +77,17 @@ export function Paywall({ assessmentId, userName, userEmail }: { assessmentId: s
         Recruiter Observation, and Growth Recommendations.
       </p>
       <div className="mt-6 display-headline text-5xl text-brand-600">₹199</div>
-      <div className="mt-6">
+      <div className="mt-6 flex flex-row gap-4 justify-center">
         <Button size="lg" onClick={pay} disabled={pending}>
           {pending ? "Processing…" : "Pay & Unlock"}
         </Button>
+
+        <Button size="lg" variant="outline" onClick={useGrant} disabled={pending || grantCount === 0}>
+          {pending ? "Processing…" : "Use Grant"}
+        </Button>
+      </div>
+      <div className="mt-2 text-sm text-ink-muted justify-end">
+        You have <b>{grantCount ? grantCount : "no"}</b> college grant{grantCount !== 1 && "s"} left.
       </div>
       {error && <div className="mt-4 text-sm text-destructive">{error}</div>}
     </div>

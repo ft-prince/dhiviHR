@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql, and,isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, streams, assessments, scores } from "@/lib/db/schema";
+import { users, streams, assessments, scores, accessGrants } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
 import { READINESS_LEVEL, fmtDate } from "@/lib/utils";
@@ -13,13 +13,22 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard");
 
-  const userDetail = await db.select({
-    streamName: streams.name,
-  }).from(users)
-  .leftJoin(streams, eq(streams.id, users.streamId))
-  .where(eq(users.id, session.user.id))
-  .limit(1)
-  .then((r) => r[0]);
+  const grants = await db.select({count: sql<number>`count(*)::int`})
+    .from(accessGrants)
+    .where(and(
+      eq(accessGrants.userId, session.user.id),
+      isNull(accessGrants.usedAt),
+    ))
+
+  const grantCount = grants[0]?.count ?? 0;
+
+    const userDetail = await db.select({
+      streamName: streams.name,
+    }).from(users)
+    .leftJoin(streams, eq(streams.id, users.streamId))
+    .where(eq(users.id, session.user.id))
+    .limit(1)
+    .then((r) => r[0])
 
   const attempts = await db
     .select({
@@ -128,6 +137,20 @@ export default async function DashboardPage() {
                   {user.role?.replace("_", " ") ?? "—"}
                 </dd>
               </div>
+              <div className="pt-3 mt-3 border-t border-border">
+              <dt className="text-ink-muted">Assessment Grants</dt>
+              <dd className="mt-1 flex items-center gap-2">
+                <span className={`text-2xl font-bold ${grantCount > 0 ? "text-brand-600" : "text-ink-muted"}`}>
+                  {grantCount}
+                </span>
+                <span className="text-xs text-ink-muted">available</span>
+              </dd>
+              {grantCount === 0 && (
+                <p className="text-xs text-ink-soft mt-1">
+                  No grants available. Contact your college admin.
+                </p>
+              )}
+            </div>
             </dl>
           </div>
         </div>

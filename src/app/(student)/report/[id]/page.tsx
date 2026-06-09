@@ -1,9 +1,9 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { and, eq, asc } from "drizzle-orm";
+import { and, eq, asc, sql, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { assessments, scores, users as usersT, competencies, score_competencies } from "@/lib/db/schema";
+import { assessments, scores, users as usersT, competencies, score_competencies, accessGrants } from "@/lib/db/schema";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { Button } from "@/components/ui/button";
 import { Paywall } from "@/components/payment/paywall";
@@ -24,7 +24,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/report/${id}`);
 
-  const [row, dbCompetencies] = await Promise.all([
+  const [row, dbCompetencies, grants] = await Promise.all([
     db
       .select({
         assessment: assessments,
@@ -41,12 +41,20 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     db
       .select({ id: competencies.id, label: competencies.label })
       .from(competencies)
-      .orderBy(asc(competencies.orderIndex))
+      .orderBy(asc(competencies.orderIndex)),
+    db.select({count: sql<number>`count(*)::int`})
+        .from(accessGrants)
+        .where(and(
+          eq(accessGrants.userId, session.user.id),
+          isNull(accessGrants.usedAt),
+        ))
   ]);
 
   if (!row[0]) notFound();
   const { assessment, score, user } = row[0];
   if (assessment.status !== "completed" || !score) redirect(`/assessment/${id}`);
+
+  const grantCount = grants[0]?.count ?? 0;
 
   const paid = await isAssessmentPaid(id, session.user.id);
   const band = READINESS_LEVEL.find((b) => b.level === score.level)!;
@@ -88,7 +96,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               <div className="mt-1 text-ink-muted">Total Score</div>
               <div className="mt-1 display-headline text-4xl sm:text-5xl text-brand-600">██ / 100</div>
             </div>
-            <Paywall assessmentId={id} userName={user?.name ?? null} userEmail={user?.email ?? null} />
+            <Paywall assessmentId={id} userName={user?.name ?? null} userEmail={user?.email ?? null} grantCount={grantCount} />
           </div>
         ) : (
           <FullReport

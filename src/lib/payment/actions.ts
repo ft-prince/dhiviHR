@@ -1,10 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { payments, assessments } from "@/lib/db/schema";
+import { payments, assessments, accessGrants } from "@/lib/db/schema";
 import {
   createRazorpayOrder,
   isRazorpayConfigured,
@@ -123,6 +123,32 @@ export async function verifyPaymentAction(input: z.infer<typeof verifySchema>) {
   return { ok: true as const };
 }
 
+export async function payUsingGrantAction(assessmentId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false as const, error: "Login required" };
+  
+   const [oldest] = await db
+    .select({ id: accessGrants.id })
+    .from(accessGrants)
+    .where(and(
+      eq(accessGrants.userId, session.user.id),
+      isNull(accessGrants.usedAt)
+    ))
+    .orderBy(accessGrants.createdAt)
+    .limit(1);
+
+    if (!oldest) return { ok: false as const, error: "No grants available" };
+
+  const [used] = await db.update(accessGrants)
+  .set({ usedAt: new Date(), usedForAssessmentId: assessmentId })
+  .where(and(eq(accessGrants.id, oldest.id)))
+  .returning({ id: accessGrants.id });
+
+  if (!used) return { ok: false as const, error: "Failed to use grant" };
+
+  return { ok: true as const };
+}
+
 /** Test/dev only: marks the latest order for an assessment paid when Razorpay isn't configured. */
 export async function devMarkPaidAction(assessmentId: string) {
   if (isRazorpayConfigured()) return { ok: false as const, error: "Razorpay is live; use checkout" };
@@ -136,9 +162,16 @@ export async function devMarkPaidAction(assessmentId: string) {
 }
 
 export async function isAssessmentPaid(assessmentId: string, userId: string): Promise<boolean> {
-  const rows = await db
+  const [byPayment] = await db
     .select({ status: payments.status })
     .from(payments)
-    .where(and(eq(payments.assessmentId, assessmentId), eq(payments.userId, userId)));
-  return rows.some((r) => r.status === "paid");
+    .where(and(eq(payments.assessmentId, assessmentId), eq(payments.userId, userId), eq(payments.status, "paid")));
+
+  if (byPayment) return true;
+  
+  const [byGrant] = await db.select({ id: accessGrants.id })
+    .from(accessGrants)
+    .where(and(eq(accessGrants.userId, userId), eq(accessGrants.usedForAssessmentId, assessmentId)));
+
+  return !!byGrant;
 }

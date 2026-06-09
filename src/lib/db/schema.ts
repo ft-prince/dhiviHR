@@ -307,19 +307,19 @@ export const enquiries = pgTable("enquiries", {
 
 export const streams = pgTable("streams", {
 
-  id: uuid("id").primaryKey().defaultRandom(),
+ id: uuid("id").primaryKey().defaultRandom(),
 
-  name: text("name").notNull(),
+ name: text("name").notNull(),
 
-  slug: text("slug").notNull().unique(),
+ slug: text("slug").notNull().unique(),
 
-  collegeId: uuid("college_id").references(() => colleges.id, { onDelete: "set null" }),
+ collegeId: uuid("college_id").references(() => colleges.id, { onDelete: "set null" }),
 
-  templateId: uuid("template_id").references(() => formTemplates.id, { onDelete: "set null" }),
+ templateId: uuid("template_id").references(() => formTemplates.id, { onDelete: "set null" }),
 
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+ createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+ updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 
 });
 
