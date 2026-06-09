@@ -7,6 +7,7 @@ import {
   ArrowRight, Menu, X, CheckCircle2,
   MessageSquare, TrendingUp, GraduationCap, Building2,
   ArrowRightIcon, Briefcase, Shield, Rocket, Sparkles, User, Mic,
+  Brain,
 } from "lucide-react";
 import { Shader, Swirl, ChromaFlow, FlutedGlass, FilmGrain } from "shaders/react";
 import { LetsConnectModal } from "@/components/enquiry/lets-connect-modal";
@@ -52,11 +53,12 @@ const HOW_STEPS = [
 
 const COMPETENCIES = [
   { icon: Briefcase,     label: "Business Acumen",          desc: "Understand how organisations create value, make decisions, and measure success — the commercial awareness employers expect." },
-  { icon: Shield,        label: "Resilience & Adaptability", desc: "Stay composed under pressure and adjust quickly when priorities, tools, or expectations change." },
-  { icon: MessageSquare, label: "Influence & Communication", desc: "Express ideas clearly, listen actively, and persuade with confidence across any audience." },
-  { icon: TrendingUp,    label: "Growth Mindset",           desc: "Treat feedback as fuel and keep improving — the habit that separates high performers from the rest." },
+  { icon: Shield,        label: "Adaptability & Resilience", desc: "Stay composed under pressure and adjust quickly when priorities, tools, or expectations change." },
+  { icon: MessageSquare, label: "Communication & Collaboration", desc: "Express ideas clearly, listen actively, and persuade with confidence across any audience." },
+  { icon: TrendingUp,    label: "Learning Agility & Continuous Improvement",           desc: "Treat feedback as fuel and keep improving — the habit that separates high performers from the rest." },
   { icon: Rocket,        label: "Execution & Ownership",    desc: "Take initiative, follow through, and own outcomes from start to finish without being chased." },
-  { icon: Sparkles,      label: "AI Awareness",             desc: "Use AI tools effectively and responsibly to work faster, smarter, and stay relevant in a changing workplace." },
+  { icon: Sparkles,      label: "AI & Digital Fluency",             desc: "Use AI tools effectively and responsibly to work faster, smarter, and stay relevant in a changing workplace." },
+  { icon: Brain,         label: "Critical Thinking & Problem Solving", desc: "Break down complex problems, identify root causes, and make informed decisions with confidence." },
 ];
 
 const EXPERT_TOPICS = [
@@ -127,7 +129,7 @@ function SectionBadge({ number, label, light }: { number: string; label: string;
   return (
     <div className="flex items-center gap-3 mb-6 sm:mb-8">
       <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-white font-semibold" style={{ fontSize: "11px", background: GREEN }}>{number}</div>
-      <span className={`text-[12px] sm:text-[13px] font-medium border rounded-full px-3 sm:px-4 py-1 sm:py-1.5 ${light ? "border-white/30 text-white" : "border-gray-200 text-gray-700"}`}>{label}</span>
+      <span className={`text-[12px] sm:text-[13px] font-medium rounded-full px-3 sm:px-4 py-1 sm:py-1.5 ${light ? "border-white/30 text-white" : "border-gray-200 text-gray-700"}`}>{label}</span>
     </div>
   );
 }
@@ -424,9 +426,9 @@ export function LandingPage({ user }: LandingPageProps) {
         {/* Hero content — centered */}
         <div className="relative z-20 flex-1 flex flex-col items-center justify-center text-center">
           <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8 lg:px-12 py-16">
-            {/* <p className="text-gray-600 tracking-wide mb-5 sm:mb-7" style={{ fontSize: "13px" }}>
-              Corporate Readiness Platform
-            </p> */}
+            <p className="text-gray-600 tracking-wide mb-5 sm:mb-7" style={{ fontSize: "13px" }}>
+              <span className="font-bold">C</span>orporate <span className="font-bold">R</span>eadiness <span className="font-bold">A</span>ssessment & <span className="font-bold">F</span>uture <span className="font-bold">T</span>alent <span className="font-bold">e</span>valuation
+            </p>
             <h1 className="font-medium text-gray-900 leading-[1.1] tracking-[-0.03em] mx-auto max-w-[20ch]" style={{ fontSize: "clamp(1.9rem,6vw,4.2rem)" }}>
               Know where you stand today and what it takes to become Corporate ready tomorrow.
             </h1>
@@ -544,14 +546,22 @@ export function LandingPage({ user }: LandingPageProps) {
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12">
           <SectionBadge number="3" label="What we measure" />
           <h2 className="font-medium text-gray-900 leading-[1.1] tracking-[-0.02em] mb-12" style={{ fontSize: "clamp(1.5rem,4vw,3rem)" }}>
-            Six dimensions.
+            Seven dimensions.
             <br />One complete picture.
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {COMPETENCIES.map((c) => {
+            {COMPETENCIES.map((c, index) => {
               const Icon = c.icon;
+              const isLast = index === COMPETENCIES.length - 1;
+              const isOdd = COMPETENCIES.length % 3 !== 0;
+
               return (
-                <div key={c.label} className="group rounded-2xl border border-gray-100 bg-white p-6 hover:border-green-200 hover:shadow-md transition-all duration-200">
+                <div
+                  key={c.label}
+                  className={`group rounded-2xl border border-gray-100 bg-white p-6 hover:border-green-200 hover:shadow-md transition-all duration-200 ${
+                    isLast && isOdd ? "sm:col-start-1 lg:col-start-2" : ""
+                  }`}
+                >
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-105" style={{ background: "#F0FDF4" }}>
                     <Icon size={20} style={{ color: GREEN }} />
                   </div>
@@ -679,7 +689,7 @@ export function LandingPage({ user }: LandingPageProps) {
               </p>
               <div className="flex flex-row gap-4 items-start">
                 {[
-                  { img: "/expert_talk1.JPG", name: "Sonam Aggarwal & Charu" },
+                  { img: "/expert_talk1.JPG", name: "Sonam Aggarwal & Charu Tikoo" },
                   { img: "/expert_talk2.jpg", name: "Siddharth Puri" },
                 ].map((expert, k) => (
                   <div
@@ -692,8 +702,8 @@ export function LandingPage({ user }: LandingPageProps) {
                       alt={expert.name}
                       className="w-full object-cover object-top"
                     />
-                    <div className="px-4 py-3 flex flex-col gap-1">
-                      <span className="text-lg font-semibold text-gray-900">
+                    <div className="px-4 py-3 flex flex-col gap-1 ml-1">
+                      <span className="text-base font-semibold text-gray-900">
                         {expert.name}
                       </span>
                       {/* <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-gray-400">
