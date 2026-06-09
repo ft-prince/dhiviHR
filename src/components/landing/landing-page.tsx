@@ -76,7 +76,7 @@ const FOOTER_LINKS = {
     { label: "Expert Talks", href: "#expert-talks" },
   ],
   Company: [
-    { label: "About DhiviHR", href: "#crafte" },
+    { label: "About CRAFTe", href: "#crafte" },
     { label: "Contact Us", href: "mailto:dhivihr@gmail.com" },
     { label: "Privacy Policy", href: "#" },
     { label: "Terms of Service", href: "#" },
@@ -753,10 +753,10 @@ export function LandingPage({ user }: LandingPageProps) {
             {/* Brand column */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: GREEN }}>
-                  <span className="text-white font-bold" style={{ fontSize: "9px" }}>DH</span>
-                </div>
-                <span className="font-bold text-[16px] tracking-tight">DhiviHR</span>
+              
+                  {/* <img src="logo.jpg" alt="CRAFTe Logo" className="w-4 h-4 object-contain" /> */}
+                
+                <span className="font-bold text-[16px] tracking-tight">CRAFTe</span>
               </div>
               <p className="text-[13px] text-gray-400 leading-relaxed max-w-xs mb-6">
                 Precision employability assessment that gives students and institutions an honest, actionable picture of where they stand.
@@ -782,7 +782,7 @@ export function LandingPage({ user }: LandingPageProps) {
 
           {/* Bottom bar */}
           <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[12px] text-gray-600">© {new Date().getFullYear()} DhiviHR. All rights reserved.</p>
+            <p className="text-[12px] text-gray-600">© {new Date().getFullYear()} CRAFTe. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <Link href="/login" className="text-[12px] text-gray-600 hover:text-gray-400 transition-colors">Login</Link>
               <Link href="/signup" className="text-[12px] text-gray-600 hover:text-gray-400 transition-colors">Sign Up</Link>
