@@ -79,7 +79,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const pdfBytes = generateFullReport(reportData);
 
-  return new NextResponse(pdfBytes, {
+  return new NextResponse(new Uint8Array(pdfBytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

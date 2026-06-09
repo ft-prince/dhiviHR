@@ -63,8 +63,7 @@ export function SiteHeader({ user, solid = false }: SiteHeaderProps) {
             className="font-display font-extrabold text-xl tracking-wide transition-colors duration-300"
             style={{ color: showSolid ? "#0F172A" : "rgba(255,255,255,0.92)" }}
           >
-            DHIVI{" "}
-            <span style={{ color: showSolid ? "#16A34A" : "#4ade80" }}>HR</span>
+            CRAFTe
           </span>
         </Link>
 

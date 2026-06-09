@@ -15,10 +15,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
-    "smoke": "tsx scripts/smoke.ts",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare deploy"
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
@@ -56,7 +53,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^0.5.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.5",
     "@types/nodemailer": "^8.0.0",
@@ -76,7 +72,6 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8",
-    "wrangler": "^3.107.3"
+    "vitest": "^2.1.8"
   }
 }

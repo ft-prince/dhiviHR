@@ -22,13 +22,14 @@ export default async function DashboardPage() {
 
   const grantCount = grants[0]?.count ?? 0;
 
-    const userDetail = await db.select({
-      streamName: streams.name,
-    }).from(users)
-    .leftJoin(streams, eq(streams.id, users.streamId))
-    .where(eq(users.id, session.user.id))
-    .limit(1)
-    .then((r) => r[0])
+  const userDetail = await db.select({
+    streamName: streams.name,
+    createdBy: users.createdBy,
+  }).from(users)
+  .leftJoin(streams, eq(streams.id, users.streamId))
+  .where(eq(users.id, session.user.id))
+  .limit(1)
+  .then((r) => r[0])
 
   const attempts = await db
     .select({
