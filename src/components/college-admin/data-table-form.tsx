@@ -15,7 +15,8 @@ export interface DataTableType {
   email: string;
   streamName: string | null;
   phone: string;
-  paymentStatus: string | null;
+  totalGrants: number;
+  availableGrants: number;
 }
 
 export function DataTableForm({
@@ -130,7 +131,7 @@ export function DataTableForm({
                   <th className="px-4 py-3 text-left font-semibold">Name</th>
                   <th className="px-4 py-3 text-left font-semibold">Stream</th>
                   <th className="px-4 py-3 text-left font-semibold">Phone</th>
-                  <th className="px-4 py-3 text-left font-semibold">Payment</th>
+                  <th className="px-4 py-3 text-left font-semibold">Grants</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +159,9 @@ export function DataTableForm({
                     <td className="px-4 py-3 align-middle">{row.streamName ?? "—"}</td>
                     <td className="px-4 py-3 align-middle">{row.phone}</td>
                     <td className="px-4 py-3 align-middle">
-                      <PaymentStatusBadge status={row.paymentStatus === "paid" ? "Paid" : "Unpaid"} />
+                      <span className={`font-bold ${row.availableGrants > 0 ? "text-green-600" : "text-red-600"}`}>
+                        {row.availableGrants}
+                      </span>
                     </td>
                   </tr>
                 ))}

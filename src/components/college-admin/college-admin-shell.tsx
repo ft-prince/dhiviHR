@@ -145,7 +145,7 @@ export function CollegeAdminShell({
                 <span className="font-semibold">  {adminDetail.collegeName}</span>
                 {(adminDetail.city || adminDetail.state) && (
                   <span className="text-[12px] text-ink items-center justify-center">
-                    · {[adminDetail.city, adminDetail.state].filter(Boolean).join(", ")}
+                    · {adminDetail.city}
                   </span>
                 )}
               </div>
