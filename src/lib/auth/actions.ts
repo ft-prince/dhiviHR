@@ -32,6 +32,9 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
+    collegeName: formData.get("collegeName"),
+    state: formData.get("state"),
+    city: formData.get("city"),
     stream: formData.get("stream") || undefined,
     password: formData.get("password"),
     phone: formData.get("phone") || undefined,
@@ -39,7 +42,7 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { name, email, password, phone, stream } = parsed.data;
+  const { name, email, password, phone, stream, state, city, collegeName } = parsed.data;
 
   if(!stream) return { ok: false, error: "Stream is required" };
 
@@ -52,7 +55,7 @@ export async function signupAction(formData: FormData): Promise<ActionResult> {
   const passwordHash = await bcrypt.hash(password, 10);
   const [created] = await db
     .insert(users)
-    .values({ name, email, passwordHash, phone, role: "student", streamId: existingStream[0].id })
+    .values({ name, email, state, city, collegeName, passwordHash, phone, role: "student", streamId: existingStream[0].id })
     .returning({ id: users.id });
 
   await audit({ actorId: created.id, action: "user.signup", target: created.id, meta: { role: "student" } });
@@ -77,6 +80,8 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
   const parsed = studentSignupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
+    state: formData.get("state"),
+    city: formData.get("city"),
     stream: formData.get("stream") || undefined,
     password: formData.get("password"),
     phone: formData.get("phone") || undefined,
@@ -85,7 +90,7 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { name, email, password, phone, accessCode, stream } = parsed.data;
+  const { name, email, state, city, password, phone, accessCode, stream } = parsed.data;
 
   if(!stream) return { ok: false, error: "Stream is required" };
 
@@ -108,6 +113,8 @@ export async function studentSignupAction(formData: FormData): Promise<ActionRes
     .values({
       name,
       email,
+      state,
+      city,
       passwordHash,
       phone,
       role: "college_student",
@@ -139,18 +146,6 @@ export async function collegeAdminSignupAction(formData: FormData): Promise<Acti
     const ip = await clientIp();
     const rl = rateLimit(rlKey("signup-college-admin", ip), 5, 60_000);
     if (!rl.ok) return { ok: false, error: "Too many attempts. Please wait a minute." };
-
-    console.log({
-    collegeName: formData.get("collegeName"),
-    email: formData.get("email"),
-    state: formData.get("state"),
-    city: formData.get("city"),
-    name: formData.get("name"),
-    pocDesignation: formData.get("pocDesignation"),
-    phone: formData.get("phone"),
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
-  });
 
     const parsed = collegeAdminSignupSchema.safeParse({
       collegeName: formData.get("collegeName"),

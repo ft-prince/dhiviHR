@@ -1,15 +1,25 @@
 import { z } from "zod";
 
 export const signupSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  stream: z.string().min(2).optional(),
-  password: z.string().min(8),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Enter a valid email address"),
+  collegeName: z.string().min(2, "College name must be at least 2 characters"),
+  state: z.string().min(1, "Please select a state"),
+  city: z.string().min(1, "Please select a city"),
+  stream: z.string().min(2, "Please select a stream").optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   phone: z.string().optional(),
 });
 
-export const studentSignupSchema = signupSchema.extend({
-  accessCode: z.string().min(4),
+export const studentSignupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Enter a valid email address"),
+  state: z.string().min(1, "Please select a state"),
+  city: z.string().min(1, "Please select a city"),
+  stream: z.string().min(2, "Please select a stream").optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  phone: z.string().optional(),
+  accessCode: z.string().min(4, "Access code must be at least 4 characters"),
 });
 
 export const collegeAdminSignupSchema = z.object({
