@@ -18,11 +18,21 @@ export default async function CollegeAdminOverviewPage() {
   const me = await requireCollegeAdmin();
 
   const allStreams = await db.select({id: streams.id, name: streams.name}).from(streams);
+  const grantsSubquery = db.select({
+    userId: accessGrants.userId,
+    totalGrants: sql<number>`COUNT(*)`.as("total_grants"),
+    availableGrants: sql<number>`COUNT(*) FILTER (WHERE ${accessGrants.usedForAssessmentId} IS NULL)`.as("available_grants"),
+    })
+    .from(accessGrants)
+    .groupBy(accessGrants.userId)
+    .as("grants_summary");
+
   const allStudents = await db
-  .selectDistinctOn([users.id],{name: users.name, email: users.email, streamName: streams.name, phone: users.phone, paymentStatus: sql<string>`CASE WHEN ${accessGrants.id} IS NOT NULL THEN 'paid' ELSE 'unpaid' END`}).from(users)
-  .leftJoin(accessGrants, eq(users.id, accessGrants.userId))
+  .select({id: users.id, name: users.name, email: users.email, streamName: streams.name, phone: users.phone, availableGrants: sql<number>`COALESCE(${grantsSubquery.availableGrants}, 0)`}).from(users)
+  .leftJoin(grantsSubquery, eq(users.id, grantsSubquery.userId))
   .leftJoin(streams, eq(users.streamId, streams.id))
   .where(eq(users.createdBy, me));
+
   const totalGrants = await db
   .select({count: sql<number>`COUNT(*)`}).from(accessGrants)
   .leftJoin(users, eq(accessGrants.userId, users.id))
@@ -71,15 +81,14 @@ export default async function CollegeAdminOverviewPage() {
         <div className="md:col-span-3">
         <h2 className="font-display font-bold text-base sm:text-lg text-ink mb-3">Recently Added Students</h2>
         <DataTable
-          rows={allStudents.map((s, i) => ({ id: String(i), email: s.email, name: s.name, streamName: s.streamName, phone: s.phone, paymentStatus: s.paymentStatus }))}
+          rows={allStudents.map((s, i) => ({ id: String(i), email: s.email, name: s.name, streamName: s.streamName, phone: s.phone, availableGrants: s.availableGrants }))}
           emptyText = "No students added yet"
           columns={[
             {key: "name", header: "Name", 
-            render: r => <div className="font-medium text-ink">{r.name}</div>},
-            {key: "email", header: "Email", render: r => <div className="font-medium text-ink">{r.email}</div>},
+            render: r => <div className="font-medium text-ink flex flex-col gap-0.5"><div>{r.name}</div><div className="text-sm text-ink-soft">{r.email}</div></div>},
             {key: "streamName", header: "Stream", render: r => <div className="font-medium text-ink">{r.streamName}</div>},
             {key: "phone", header: "Phone", render: r => <div className="font-medium text-ink">{r.phone}</div>},
-            {key: "paymentStatus", header: "Payment Status", render: r => <PaymentStatusBadge status={r.paymentStatus === "paid" ? "Paid" : "Unpaid"} />}
+            {key: "availableGrants", header: "Grants", render: r => <span className={`font-semibold ${r.availableGrants > 0 ? 'text-green-500' : 'text-red-500'}`}>{r.availableGrants}</span>}
           ]}
           />
         </div>
